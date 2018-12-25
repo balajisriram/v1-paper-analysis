@@ -5,6 +5,7 @@ import numpy
 import os
 import importlib.machinery
 import types
+import pickle
 
 np64 = numpy.float64
 
@@ -31,7 +32,7 @@ def load_trialrecs_to_dict(loc):
         error('too many or too few trial Records. how is this possible?')
     
     temp = scipy.io.loadmat(os.path.join(loc,file[0]))
-    
+    pdb.set_trace()
     tRs = temp['trialRecords'][0]
     numTrials = tRs.size
     
@@ -239,3 +240,11 @@ def load_spikerecs_to_dict(loc):
     CDMod = import_module('ClusterDetails','C:\\Users\\bsriram\\Desktop\\Code\\V1PaperAnalysis\\ClusterDetails.py')
     spike_details = CDMod.get_cluster_details(loc)
     return spike_details
+    
+if __name__=='__main__':
+    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\TEMP\m310_2017-05-16_13-51-53'
+    
+    with open(os.path.join(loc,'spike_and_trials.pickle'),'rb') as f:
+        spike_and_trial_details = pickle.load(f)
+    
+    pdb.set_trace()

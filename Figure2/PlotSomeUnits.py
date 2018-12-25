@@ -19,7 +19,6 @@ def get_cluster_waveforms (kwik_model,cluster_id):
             return
     
     idx=numpy.argwhere(clusters==cluster_id)
-    #print(kwik_model.all_waveforms[idx])
     return kwik_model.all_waveforms[idx]
 
 def isi_violations(spike_train, min_isi, ref_dur):
@@ -32,8 +31,6 @@ def isi_violations(spike_train, min_isi, ref_dur):
     violation_rate = num_violations/violation_time
     fp_rate = violation_rate/total_rate
     return fp_rate, num_violations
-
-def get_cluster_details(folder):
     # get the .kwik file and make KwikModel
     kwik_file = [f for f in os.listdir(folder) if f.endswith('.kwik')]
     if len(kwik_file)>1 or len(kwik_file)==0:
