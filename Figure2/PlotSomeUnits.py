@@ -218,7 +218,7 @@ def get_model(loc):
     
 def plot_unit_stability(loc,data,whichs):
     kwik_model = get_model(loc)
-    for which in whichs:
+    for i, which in enumerate(whichs):
         kwik_model.channel_group = which[0]
         kwik_model.clustering = 'main'
         spike_time = kwik_model.spike_samples.astype(numpy.float64)/kwik_model.sample_rate
@@ -265,7 +265,7 @@ def plot_unit_stability(loc,data,whichs):
         ax3.plot(fet_y_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
         
         
-        plt.savefig('trial.png')
+        plt.savefig('trial%d.png' % i)
         
         
 if __name__=="__main__":
