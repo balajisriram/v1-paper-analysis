@@ -1,0 +1,22 @@
+#!/bin/bash
+#$ -N PlotUnits
+#$ -l h_rt=12:00:00 
+#$ -q short.q 
+#$ -wd /home/bsriram/v1paper/v1-paper-analysis
+#$ -j no 
+#$ -M balaji.sriram@biogen.com
+#$ -m be 
+#$ -e error.log 
+#$ -o output.log 
+
+##########################################################################
+# Start your script here #
+##########################################################################
+# Load the modules you need.
+source /home/bsriram/miniconda3/bin/activate v1paper
+# Run some commands.
+python Figure2/PlotSomeUnits.py
+
+# Exit successfully.
+exit 0
+
