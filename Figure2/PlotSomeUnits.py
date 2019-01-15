@@ -265,12 +265,12 @@ def plot_unit_stability(loc,data,whichs):
         ax3.plot(fet_y_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
         
         
-        plt.show()
-
+        plt.savefig('trial.jpg')
         
         
 if __name__=="__main__":
-    location = r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedPhysOnly\bas070_2015-08-17_14-30-11'
+    location = '/home/bsriram/data/DetailsProcessedPhysOnly/bas070_2015-08-17_14-30-11'
+
     with open(os.path.join(location,'spike_and_trials.pickle'),'rb') as f:
         data = pickle.load(f)
     

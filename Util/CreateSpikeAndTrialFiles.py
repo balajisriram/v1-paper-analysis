@@ -5,6 +5,7 @@ import os
 import pdb
 import scipy
 import shutil
+import v1-paper-analysis 
 
 def import_module(name,file):
     loader = importlib.machinery.SourceFileLoader(name,file)
