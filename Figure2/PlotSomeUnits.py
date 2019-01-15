@@ -265,7 +265,7 @@ def plot_unit_stability(loc,data,whichs):
         ax3.plot(fet_y_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
         
         
-        plt.savefig('trial.jpg')
+        plt.savefig('trial.png')
         
         
 if __name__=="__main__":
