@@ -2,7 +2,6 @@ from klusta.kwik.model import KwikModel
 import os
 import numpy
 import matplotlib.pyplot as plt
-import importlib.machinery
 import types
 import pdb
 import pickle
