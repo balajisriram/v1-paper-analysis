@@ -190,21 +190,6 @@ def plot_unit_ISI(data,whichs):
         
         plt.show()
         input("Press <ENTER> to continue")
-        
-def plot_num_sessions_histogram():
-    base = [0,2,4,6,8,10,40]
-    behaved = [4,1,4,3,2,2]
-    phys = [36,2,7,4,2,7,4,4,1]
-    fig = plt.figure(figsize=(3,3),dpi=200,facecolor='none',edgecolor='none')
-    histc1 = numpy.histogram(phys,bins=base)
-    histc2 = numpy.histogram(behaved,bins=base)
-    plt.clf()
-    plt.bar(base[0:6],histc1[0],align='edge',edgecolor='none',color=(0.,0.,0.),width=1.8)
-    plt.bar(base[0:6],histc2[0],bottom=histc1[0],align='edge',edgecolor='none',color=(0.2,0.2,0.2),width=1.8)
-    
-    plt.ylim((0,6))
-    plt.xlim((0,12))
-    plt.show()
 
 def get_model(loc):
     kwik_file = [f for f in os.listdir(loc) if f.endswith('.kwik')]

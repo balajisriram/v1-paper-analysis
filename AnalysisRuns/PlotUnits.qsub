@@ -15,7 +15,7 @@
 # Load the modules you need.
 source /home/bsriram/miniconda3/bin/activate v1paper
 # Run some commands.
-python Figure2/PlotSomeUnits.py
+python -m Figure2.PlotAllUnits
 
 # Exit successfully.
 exit 0

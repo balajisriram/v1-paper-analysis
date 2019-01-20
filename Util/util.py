@@ -5,6 +5,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import pprint
 ppr = pprint.PrettyPrinter(indent=2)
+from datetime import datetime
 
 def get_base_depth(sess):
     if 'bas070_' in sess:
@@ -77,6 +78,11 @@ def get_subject_from_session(sess):
     splits = sess.split('_')
     return splits[0]
 
+def get_session_date(sess):
+    splits = sess.split('_')
+    date_time = splits[1]+'_'+splits[2]
+    return datetime.strptime(date_time,"%Y-%m-%d_%H-%M-%S")
+    
 def get_unit_depth(sess,y_loc):
     return(get_base_depth(sess)-y_loc)
 
@@ -128,11 +134,6 @@ def get_fwhm(wvform):
     spike_width = (idx_right-idx_left)/1000.*total_time
     # plt.show()
     return spike_width
-
-def get_unit_isi(spike_times):
-    isi = numpy.diff(numpy.unique(spike_times),axis=0)
-    histc, binedge = numpy.histogram(isi,range=(0,0.1),bins=100)
-    return histc   
     
 def get_subject_from_session(sess):
     splits = sess.split('_')
