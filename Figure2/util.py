@@ -143,7 +143,7 @@ def get_fwhm(wvform, t, ax = None, plot = False):
            idx_left = i
            break
     
-    idx_right = wvform.size
+    idx_right = wvform.size-1
     for i in range(wvform_min_idx,wvform.size):
         if wvform[i]>half_min:
             idx_right = i
