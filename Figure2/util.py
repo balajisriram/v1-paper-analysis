@@ -9,7 +9,7 @@ import pickle
 import pandas
 
 def get_model(loc):
-    kwik_file = [f for f in os.listdir(loc) if f.endswith('.kwik')]
+    kwik_file = [f for f in os.listdir(loc) if f.endswith('.kwik') and '100' in f]
     if len(kwik_file)>1 or len(kwik_file)==0:
         RuntimeError('Too many or too few files. Whats happening')
     kwik_file_path = os.path.join(loc,kwik_file[0])
