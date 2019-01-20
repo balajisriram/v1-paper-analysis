@@ -34,7 +34,7 @@ neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
 
 neuronDF = pd.DataFrame()
 
-for session_type_idx, base_loc in base_locs:
+for session_type_idx, base_loc in enumerate(base_locs):
     for i,session_folder in enumerate(os.listdir(base_loc)): # enumerate(['bas070_2015-08-05_12-31-50']): #
         summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
         with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
