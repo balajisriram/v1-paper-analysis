@@ -58,6 +58,7 @@ base_loc = base_locs[1]
 folder_list = os.listdir(base_loc)
 folder_list.sort()
 for session_folder in folder_list:
+    print('hello')
     pool.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result)
 
 # pickle the results                

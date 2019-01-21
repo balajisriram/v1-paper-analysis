@@ -7,6 +7,7 @@ import matplotlib.gridspec as gridspec
 import pickle
 import pandas as pd
 def process_session(session_type_idx,session_folder,base_loc):
+    print('abracadabra')
     neurons_that_session = []
     summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
     with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
