@@ -6,8 +6,13 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import pickle
 import pandas as pd
+
+session_type = ['phys', 'behaved']
+base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
+save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
+
+
 def process_session(session_type_idx,session_folder,base_loc):
-    print('abracadabra')
     neurons_that_session = []
     summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
     with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
