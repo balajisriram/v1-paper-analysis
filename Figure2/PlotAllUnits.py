@@ -8,10 +8,19 @@ import matplotlib.gridspec as gridspec
 import pickle
 import pandas as pd
 
+import multiprocessing as mpl
+
+pool = mp.Pool(mp.cpu_count())
+session_records = []
 
 label_size = 8
 mpl.rcParams['xtick.labelsize'] = label_size 
 mpl.rcParams['ytick.labelsize'] = label_size 
+
+session_type = ['phys', 'behaved']
+base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
+save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
+neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
 
 def plot_unit(fig_ref, unit, loc, this_neuron_record):
     ax1 = plt.subplot2grid((5,3),(0,0),colspan=2)
@@ -28,60 +37,69 @@ def plot_unit(fig_ref, unit, loc, this_neuron_record):
     this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
 
     return this_neuron_record
-    
-# base_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedPhysOnly']
-# save_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails']
-# session_type = ['phys']
-# neuron_save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails'
 
-session_type = ['phys', 'behaved']
-base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
-save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
-neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
-
-neuronDF = pd.DataFrame()
-test = False
-for session_type_idx, base_loc in enumerate(base_locs):
-    if test:
-        folder_list = ['bas070_2015-08-05_12-31-50']
-    else:
-        folder_list = os.listdir(base_loc)
-    for i,session_folder in enumerate(folder_list):
-        summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
-        with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
-            with open(os.path.join(base_loc,session_folder,'spike_and_trials.pickle'),'rb') as f:
-                data = pickle.load(f)
-            for unit in data['spike_records']['units']:
-                if unit['manual_quality'] in ['good','mua']:
-                    this_neuron_record = {}
-                    this_neuron_record['session'] = session_folder
-                    this_neuron_record['session_type'] = session_type[session_type_idx]
-                    this_neuron_record['session_date'] = get_session_date(session_folder)
-                    this_neuron_record['subject'] = get_subject_from_session(session_folder)
-                    this_neuron_record['probe_name'] = data['spike_records']['probe_name']
-                    this_neuron_record['sample_rate'] = data['spike_records']['sample_rate']
-                    this_neuron_record['strong_threshold'] = data['spike_records']['strong_threshold']
-                    this_neuron_record['weak_threshold'] = data['spike_records']['weak_threshold']
-                    this_neuron_record['spikes_direction'] = data['spike_records']['spikes_direction']
-                    this_neuron_record['high_pass_hi_f'] = data['spike_records']['high_pass_hi_f']
-                    this_neuron_record['high_pass_lo_f'] = data['spike_records']['high_pass_lo_f']
-                    this_neuron_record['session_duration'] = data['spike_records']['duration']
-                    
-                    this_neuron_record['num_spikes'] = unit['num_spikes']
-                    this_neuron_record['shank_no'] = unit['shank_no']
-                    this_neuron_record['cluster_id'] = unit['cluster_id']
-                    this_neuron_record['unit_id'] = get_unit_id(session_folder, unit['shank_no'], unit['cluster_id'])
-                    this_neuron_record['x_loc'] = unit['x_loc']
-                    this_neuron_record['depth'] = get_unit_depth(session_folder,unit['y_loc'])
-
-                    
-                    fig = plt.figure(num = i, figsize=(8.5,11), dpi=300, frameon=False, facecolor=None)
-                    this_neuron_record=plot_unit(fig, unit, os.path.join(base_loc,session_folder), this_neuron_record)
-                    fig.subplots_adjust(wspace=0.25, hspace=0.25)
-                    plt.suptitle('shank::%d, cluster::%d, quality::%s' % (unit['shank_no'], unit['cluster_id'], unit['manual_quality']))
-                    pdf.savefig()  # saves the current figure into a pdf page
-                    plt.close()
-                    
-                    neuronDF = neuronDF.append(this_neuron_record,ignore_index=True)
+def process_session(session_type_idx,session_folder,base_loc):
+    neurons_that_session = []
+    summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
+    with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
+        with open(os.path.join(base_loc,session_folder,'spike_and_trials.pickle'),'rb') as f:
+            data = pickle.load(f)
+        for unit in data['spike_records']['units']:
+            print('session::{0},shank::{1},cluster::{2}'.format(session_folder,unit['shank_no'],unit['cluster_id']))
+                 
+            if unit['manual_quality'] in ['good','mua']:
+                this_neuron_record = {}
+                this_neuron_record['session'] = session_folder
+                this_neuron_record['session_type'] = session_type[session_type_idx]
+                this_neuron_record['session_date'] = get_session_date(session_folder)
+                this_neuron_record['subject'] = get_subject_from_session(session_folder)
+                this_neuron_record['probe_name'] = data['spike_records']['probe_name']
+                this_neuron_record['sample_rate'] = data['spike_records']['sample_rate']
+                this_neuron_record['strong_threshold'] = data['spike_records']['strong_threshold']
+                this_neuron_record['weak_threshold'] = data['spike_records']['weak_threshold']
+                this_neuron_record['spikes_direction'] = data['spike_records']['spikes_direction']
+                this_neuron_record['high_pass_hi_f'] = data['spike_records']['high_pass_hi_f']
+                this_neuron_record['high_pass_lo_f'] = data['spike_records']['high_pass_lo_f']
+                this_neuron_record['session_duration'] = data['spike_records']['duration']
                 
-neuronDF.to_pickle(os.path.join(neuron_save_loc,'NeuronDatabase.hdf'))
+                this_neuron_record['num_spikes'] = unit['num_spikes']
+                this_neuron_record['shank_no'] = unit['shank_no']
+                this_neuron_record['cluster_id'] = unit['cluster_id']
+                this_neuron_record['unit_id'] = get_unit_id(session_folder, unit['shank_no'], unit['cluster_id'])
+                this_neuron_record['x_loc'] = unit['x_loc']
+                this_neuron_record['depth'] = get_unit_depth(session_folder,unit['y_loc'])
+
+                
+                fig = plt.figure(figsize=(8.5,11), dpi=300, frameon=False, facecolor=None)
+                this_neuron_record=plot_unit(fig, unit, os.path.join(base_loc,session_folder), this_neuron_record)
+                fig.subplots_adjust(wspace=0.25, hspace=0.25)
+                plt.suptitle('shank::%d, cluster::%d, quality::%s' % (unit['shank_no'], unit['cluster_id'], unit['manual_quality']))
+                pdf.savefig()  # saves the current figure into a pdf page
+                plt.close()
+                neurons_that_session.append(this_neuron_record)
+    return neurons_that_session
+
+def collect_result(result):
+    global session_records
+    session_records.append(result)
+
+all_neuron_records = []
+
+# for phys
+base_loc = base_locs[0]
+folder_list = os.listdir(base_loc)
+folder_list.sort()
+for session_folder in folder_list:
+    pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result)
+
+    
+# for behaved
+base_loc = base_locs[1]
+folder_list = os.listdir(base_loc)
+folder_list.sort()
+for session_folder in folder_list:
+    pool.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result)
+
+# pickle the results                
+with open(os.path.join(neuron_save_loc,'NeuronData.pickle'),'wb') as f:
+    pickle.dump(session_records, f, pickle.HIGHEST_PROTOCOL)
