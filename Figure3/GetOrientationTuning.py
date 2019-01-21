@@ -119,6 +119,90 @@ def get_all_orientation_tuning(location):
         print('done session')
     return unit_details_across_sessions
 
+def get_or_tuning(location, sess, unit):
+    unit_details = {}
+    failed_why = None
+    with open(os.path.join(location,sess,'spike_and_trials.pickle'),'rb') as f:
+        data = pickle.load(f)
+    try:
+        stepname,durations = get_orientation_tuning_stepname(sess)
+    except:
+        print('failed to get stepname')
+    framechan,shift = get_frame_channel(sess)
+    
+    if not stepname: 
+        failed_why = 'no_or_tuning_stepname'
+        return unit_details, failed_why
+    
+    trial_numbers = numpy.asarray(data['trial_records']['trial_number'])
+    step_names = numpy.asarray(data['trial_records']['step_name'])
+    contrasts = numpy.asarray(data['trial_records']['contrast'])
+    max_durations = numpy.asarray(data['trial_records']['max_duration'])
+    phases = numpy.asarray(data['trial_records']['phase'])
+    orientations = numpy.asarray(data['trial_records']['orientation'])
+    
+    which_step = step_names==stepname
+    trial_numbers = trial_numbers[which_step]
+    step_names = step_names[which_step]
+    contrasts = contrasts[which_step]
+    max_durations = max_durations[which_step]
+    phases = phases[which_step]
+    orientations = orientations[which_step]
+    frame_start_index = []
+    frame_end_index = []    
+    for trial_number in trial_numbers:
+        event_for_trial = data['trial_records']['events']['ttl_events'][trial_number]
+        if shift:
+            frame_start_index.append(event_for_trial[framechan]['rising'][1])
+            frame_end_index.append(event_for_trial[framechan]['rising'][-2])
+        else:
+            frame_start_index.append(event_for_trial[framechan]['rising'][0])
+            frame_end_index.append(event_for_trial[framechan]['rising'][-1])
+            
+    frame_start_index = numpy.asarray(frame_start_index)
+    frame_end_index = numpy.asarray(frame_end_index)
+        
+    spike_time = numpy.squeeze(numpy.asarray(unit['spike_time']))
+    spike_raster = {}
+    for trial_number in trial_numbers:
+        frame_start_time = frame_start_index[trial_numbers==trial_number][0]/30000
+        frame_end_time = frame_end_index[trial_numbers==trial_number][0]/30000
+        
+        spikes_that_trial = spike_time[numpy.bitwise_and(spike_time>frame_start_time,spike_time<frame_end_time)]-frame_start_time
+        spike_raster[trial_number] = spikes_that_trial
+    or_tuning, spikes_found = get_or_tuning_dict(spike_raster,trial_numbers,orientations)
+    if spikes_found:
+        unit_details['or_tuning'] = or_tuning
+        unit_details['osi'] = get_OSI(or_tuning['orientation'],or_tuning['m_rate'])
+        unit_details['vector_sum'] = get_vector_sum(or_tuning['orientation'],or_tuning['m_rate'])
+        # jack_knife
+        unit_details['trial_jackknife'] = []
+        unit_details['osi_jackknife'] = []
+        unit_details['vector_sum_jackknife'] = []
+        for key in spike_raster:
+            # prep the copies
+            spike_raster_jack_knife = spike_raster.copy()
+            which_tr = trial_numbers==key
+            idx = numpy.where(numpy.logical_not(which_tr))[0]
+            trial_number_jack_knife = trial_numbers[idx]
+            orientation_jack_knife = orientations[idx]
+            del spike_raster_jack_knife[key]
+            
+            or_tuning_jack_knife,spikes_found_jackknife=get_or_tuning_dict(spike_raster_jack_knife,trial_number_jack_knife,orientation_jack_knife)
+            unit_details['trial_jackknife'].append(key)
+            unit_details['osi_jackknife'].append(get_OSI(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
+            unit_details['vector_sum_jackknife'].append(get_vector_sum(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
+        print('done_unit')
+    else:
+        unit_details = {}
+        failed_why = 'no_spikes'
+    return unit_details, failed_why
+    
+    
+    
+    
+    
+
 def get_or_tuning_dict(spike_raster,trial_numbers,orientations):
     or_tuning = {'orientation':[],'m_rate':[],'std_rate':[],'n_trials':[]}
     spikes_found = False

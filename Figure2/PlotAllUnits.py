@@ -1,5 +1,5 @@
 import os
-from Figure2.util import get_unit_details, plot_ISI, plot_unit_waveform,plot_unit_stability
+from Figure2.util import get_unit_details, plot_ISI, plot_unit_waveform,plot_unit_stability, plot_unit_quality,plot_firing_rate,plot_or_tuning
 from Util.util import get_unit_id, get_unit_depth, get_subject_from_session, get_session_date
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
@@ -19,23 +19,34 @@ def plot_unit(fig_ref, unit, loc, this_neuron_record):
     ax2 = plt.subplot2grid((5,3),(0,2),colspan=1)
     this_neuron_record = plot_unit_waveform(unit, ax2, this_neuron_record)
     ax3 = plt.subplot2grid((5,3),(1,0),colspan=2)
+    this_neuron_record = plot_unit_stability(unit, loc, this_neuron_record, ax=ax3)
     ax4 = plt.subplot2grid((5,3),(1,2),colspan=1)
-    this_neuron_record = plot_unit_stability(unit, loc, ax3, ax4, this_neuron_record)
+    this_neuron_record = plot_unit_quality(unit, loc, this_neuron_record, ax=ax4)
+    ax5 = plt.subplot2grid((5,3),(2,0),colspan=2)
+    this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
+    ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
+    this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
+
     return this_neuron_record
     
-# base_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedPhysOnly'
-# save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails'
+# base_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedPhysOnly']
+# save_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails']
+# session_type = ['phys']
+# neuron_save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails'
 
 session_type = ['phys', 'behaved']
 base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
 save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
-# base_loc = '/home/bsriram/data/DetailsProcessedPhysOnly'
 neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
 
 neuronDF = pd.DataFrame()
-
+test = False
 for session_type_idx, base_loc in enumerate(base_locs):
-    for i,session_folder in enumerate(os.listdir(base_loc)): # enumerate(['bas070_2015-08-05_12-31-50']): #
+    if test:
+        folder_list = ['bas070_2015-08-05_12-31-50']
+    else:
+        folder_list = os.listdir(base_loc)
+    for i,session_folder in enumerate(folder_list):
         summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
         with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
             with open(os.path.join(base_loc,session_folder,'spike_and_trials.pickle'),'rb') as f:

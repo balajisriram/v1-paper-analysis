@@ -41,37 +41,37 @@ def cluster_quality_all(clu, fet, mask, fet_N=12):
 
 
 def cluster_quality_core(fet_this, fet_other):
-    try:
-        n_this = fet_this.shape[0]
-        n_other = fet_other.shape[0]
+    # try:
+    n_this = fet_this.shape[0]
+    n_other = fet_other.shape[0]
 
-        n_fet = fet_this.shape[1]
-        assert n_fet == fet_other.shape[1], "num features dont match"
+    n_fet = fet_this.shape[1]
+    assert n_fet == fet_other.shape[1], "num features dont match"
 
-        cov_this_inv = numpy.linalg.inv(numpy.cov(fet_this, rowvar=False))
+    cov_this_inv = numpy.linalg.inv(numpy.cov(fet_this, rowvar=False))
 
-        if n_other > n_this and n_this > n_fet:
-            md = numpy.zeros(n_other)
-            md_self = numpy.zeros(n_this)
+    if n_other > n_this and n_this > n_fet:
+        md = numpy.zeros(n_other)
+        md_self = numpy.zeros(n_this)
 
-            for ii in range(0, n_other):
-                md[ii] = numpy.matmul(numpy.matmul(fet_other[ii, :], cov_this_inv), fet_other[ii, :])
+        for ii in range(0, n_other):
+            md[ii] = numpy.matmul(numpy.matmul(fet_other[ii, :], cov_this_inv), fet_other[ii, :])
 
-            for ii in range(0, n_this):
-                md_self[ii] = numpy.matmul(numpy.matmul(fet_this[ii, :], cov_this_inv), fet_this[ii, :])
+        for ii in range(0, n_this):
+            md_self[ii] = numpy.matmul(numpy.matmul(fet_this[ii, :], cov_this_inv), fet_this[ii, :])
 
-            md = numpy.sort(md)
-            md_self = numpy.sort(md_self)
+        md = numpy.sort(md)
+        md_self = numpy.sort(md_self)
 
-            unit_quality = md[n_this - 1]
-            contamination_rate = 1 - (tipping_point(md_self, md) / numpy.size(md_self))
-            #print(tipping_point(md_self, md))
-        else:
-            unit_quality = 0
-            contamination_rate = None
-    except:
+        unit_quality = md[n_this - 1]
+        contamination_rate = 1 - (tipping_point(md_self, md) / numpy.size(md_self))
+        #print(tipping_point(md_self, md))
+    else:
         unit_quality = 0
         contamination_rate = None
+    # except:
+        # unit_quality = 0
+        # contamination_rate = None
 
     return unit_quality, contamination_rate
 
@@ -98,11 +98,11 @@ def tipping_point(x, y):
     
 if __name__=="__main__":
     # create a small dataset and test the result
-    x = numpy.random.normal(0,1,[100,12])
-    y = numpy.random.normal(1,1,[1000,12])
+    x = numpy.random.normal(0,.1,[1000,12])
+    y = numpy.random.normal(2,.1,[10000,12])
         
-    uq,cr,md,md_self = cluster_quality_core(x,y)
+    uq,cr = cluster_quality_core(x,y)
     print(uq)
     print(cr)
     
-    scipy.io.savemat("C:\\Users\\bsriram\\Desktop\\data.mat",dict(x=x,y=y,md=md,md_self=md_self))
+    # scipy.io.savemat("C:\\Users\\bsriram\\Desktop\\data.mat",dict(x=x,y=y,md=md,md_self=md_self))

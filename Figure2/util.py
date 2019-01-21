@@ -7,6 +7,9 @@ import types
 import pdb
 import pickle
 import pandas
+from scipy.stats import kde
+from Util.ClusterQuality import cluster_quality_core
+from Util.util import get_frame_channel
 
 def get_model(loc):
     kwik_file = [f for f in os.listdir(loc) if f.endswith('.kwik') and '100' in f]
@@ -131,7 +134,7 @@ def plot_ISI(unit, ax, record):
     ax.text(ax.get_xlim()[1],ax.get_ylim()[1],'viol_rate=%2.3fHz of %2.3fHz' % (violation_rate,total_rate), horizontalalignment='right',verticalalignment='top',fontsize=6)
     return record
 
-def get_fwhm(wvform, t, ax = None, plot = False):    
+def get_fwhm(wvform, t, ax = None):    
     # find the min value and index of interp functionm
     wvform_min = np.min(wvform)
     half_min = wvform_min/2
@@ -150,11 +153,11 @@ def get_fwhm(wvform, t, ax = None, plot = False):
             break
     # print('min_idx::%d, left:: %d, right %d' %(wvform_min_idx, idx_left, idx_right))
     spike_width = t[idx_right]-t[idx_left]
-    if plot:
+    if ax:
         ax.plot([t[idx_left],t[idx_right]],[half_min,half_min],'-',color='blue')
     return spike_width
 
-def get_peak_trough(wvform, t, ax=None, plot=False):
+def get_peak_trough(wvform, t, ax=None):
     # find the min value and index of interp functionm
     wvform_min = np.min(wvform)
     half_min = wvform_min/2
@@ -164,7 +167,7 @@ def get_peak_trough(wvform, t, ax=None, plot=False):
     p2t_ratio = -wvform[wvform_max_idx]/wvform[wvform_min_idx]
     p2t_time = t[wvform_max_idx]-t[wvform_min_idx]
     
-    if plot:
+    if ax:
         ax.plot(t[wvform_max_idx],wvform[wvform_max_idx],'gx')
         ax.plot(t[wvform_min_idx],wvform[wvform_min_idx],'rx')
     
@@ -194,21 +197,29 @@ def plot_unit_waveform(unit,ax, record):
     record['m_wvform'] = interp_m
     record['sd_wvform'] = interp_sd
     
+    max_idx = np.argmin(interp_m)
+    record['peak_snr_wvform'] = interp_m[max_idx]/interp_sd[max_idx]
+    
     ax.plot(interp_x_vals,interp_m,color="black",linewidth=2)
     ax.plot(interp_x_vals,interp_m+interp_sd,"-",color="black",linewidth=1)
     ax.plot(interp_x_vals,interp_m-interp_sd,"-",color="black",linewidth=1)
     ax.xaxis.set_major_locator(plt.MaxNLocator(3))
     ax.yaxis.set_major_locator(plt.MaxNLocator(3))
     
-    fwhm = get_fwhm(interp_m,interp_x_vals, ax=ax, plot=True)
-    p2t_ratio,p2t_time = get_peak_trough(interp_m,interp_x_vals, ax=ax, plot=True)
+    fwhm = get_fwhm(interp_m,interp_x_vals, ax=ax)
+    fwhm = 1000.*fwhm # in ms
+    p2t_ratio,p2t_time = get_peak_trough(interp_m,interp_x_vals, ax=ax)
+    p2t_time = 1000.* p2t_time # in ms
     record['fwhm'] = fwhm
     record['p2t_ratio'] = p2t_ratio
     record['p2t_time'] = p2t_time
     ax.plot(ax.get_xlim(),[0,0,],'--',color='black')
+    ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
+            horizontalalignment='right',verticalalignment='bottom',fontsize=5)
+    
     return record
     
-def plot_unit_stability(unit, model_loc, ax1, ax2, record):
+def plot_unit_stability(unit, model_loc, record, ax=None):
     kwik_model = get_model(model_loc)
     
     kwik_model.channel_group = unit['shank_no']
@@ -238,17 +249,236 @@ def plot_unit_stability(unit, model_loc, ax1, ax2, record):
     fet_x_other = fet_other[:,fet_seq[0]]
     fet_y_other = fet_other[:,fet_seq[2]]
     
-    
     # select 2% from 'that' and 0.1% from other
     that_choice = np.random.choice([True,False],size=fet_x_that.shape,p=[0.02,0.98])
     other_choice = np.random.choice([True,False],size=fet_x_other.shape,p=[0.01,0.99])
-    
-    ax1.plot(spike_time_that[that_choice],fet_x_that[that_choice],'o',color='blue',markersize=5,markeredgecolor='none')
-    ax1.plot(spike_time_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
+    if ax:
+        ax.plot(spike_time_that[that_choice],fet_x_that[that_choice],'o',color='blue',markersize=5,markeredgecolor='none')
+        ax.plot(spike_time_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
 
+    return record
     
-    ax2.plot(fet_y_that[that_choice],fet_x_that[that_choice],'o',color='blue',markersize=5,markeredgecolor='none')
-    ax2.plot(fet_y_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
+def plot_unit_quality(unit, model_loc, record, ax=None):
+    kwik_model = get_model(model_loc)
+    
+    kwik_model.channel_group = unit['shank_no']
+    kwik_model.clustering = 'main'
+    spike_time = kwik_model.spike_samples.astype(np.float64)/kwik_model.sample_rate
+    spike_id = kwik_model.spike_ids
+    cluster_id = kwik_model.spike_clusters
+    fet_masks = kwik_model.all_features_masks
+    fet = np.squeeze(fet_masks[:,:,0])
+    
+    that_cluster_idx = np.argwhere(cluster_id==unit['cluster_id'])
+    other_cluster_idx = np.argwhere(cluster_id!=unit['cluster_id'])
+    
+    fet_that = np.squeeze(fet[that_cluster_idx,:])
+    fet_other = np.squeeze(fet[other_cluster_idx,:])
+    
+    # find the feature dimensions with greatest mean values
+    fet_that_mean = np.mean(fet_that,axis=0)
+    fet_seq = np.argsort(-1*np.absolute(fet_that_mean))
+    
+    fet_x_that = fet_that[:,fet_seq[0]]
+    fet_y_that = fet_that[:,fet_seq[1]]
+    data_that = np.vstack((fet_x_that, fet_y_that))
+    data_that = data_that.T
+    
+    fet_x_other = fet_other[:,fet_seq[0]]
+    fet_y_other = fet_other[:,fet_seq[1]]
+    data_other = np.vstack((fet_x_other, fet_y_other))
+    data_other = data_other.T
+    
+    min_x = np.min([np.min(fet_x_that),np.min(fet_x_other)])
+    max_x = np.max([np.max(fet_x_that),np.max(fet_x_other)])
+    x = np.linspace(min_x,max_x,50)
+    min_y = np.min([np.min(fet_y_that),np.min(fet_y_other)])
+    max_y = np.max([np.max(fet_y_that),np.max (fet_y_other)])
+    y = np.linspace(min_y,max_y,50)
+    
+    xx, yy = np.mgrid[min_x:max_x:100j, min_y:max_y:100j]
+    
+    k_that = kde.gaussian_kde(data_that.T)
+    z_that = k_that(np.vstack([xx.flatten(), yy.flatten()]))
+
+    k_other = kde.gaussian_kde(data_other.T)
+    z_other = k_other(np.vstack([xx.flatten(), yy.flatten()]))
+    
+    uq,cr = cluster_quality_core(fet_that,fet_other)
+    record['isolation_distance'] = uq
+    record['contamination_rate_from_mahal'] = cr
+    
+    if ax:
+        ax.hist2d(fet_x_that,fet_y_that,bins=30,cmap='Blues',alpha=0.5)
+        ax.contour(xx, yy, z_that.reshape(xx.shape),cmap='Blues')
+        
+        ax.hist2d(fet_x_other,fet_y_other,bins=30,cmap='Greys',alpha=0.5)
+        ax.contour(xx, yy, z_other.reshape(xx.shape),cmap='Greys')
+        if cr is not None:
+            ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq=%2.3f;cr=%2.3f' %(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
+        else:
+            ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq={0};cr={1}'.format(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
     
     return record
 
+def plot_firing_rate(unit, loc, record, ax=None):
+    with open(os.path.join(loc,'spike_and_trials.pickle'),'rb') as f:
+        data = pickle.load(f)
+    session_duration = data['spike_records']['duration']
+    spike_time = unit['spike_time']
+    times = []
+    spike_rate = []
+    for t in np.arange(np.floor(session_duration)):
+        spike_rate.append(np.sum((spike_time>t) & (spike_time<t+1)))
+        times.append(t)
+    
+    if ax:
+        ax.plot(times,spike_rate,'k')
+        
+def plot_or_tuning(unit, loc, record, ax=None):
+    tuning_data,failed_why = get_or_tuning(os.path.dirname(loc), os.path.basename(loc),unit)
+    if not failed_why:
+        record['or_tuning_orientation'] = tuning_data['orientation']
+        record['or_tuning_rate'] = tuning_data['m_rate']
+        record['or_tuning_sd'] = tuning_data['std_rate']
+        record['or_tuning_n_trials'] = tuning_data['n_trials']
+        record['or_tuning_sem'] = np.divide(tuning_data['std_rate'],np.sqrt(tuning_data['n_trials']))
+        
+        record['osi'] = tuning_data['osi'][0]
+        record['osi_angle'] = tuning_data['osi'][1]
+        record['osi_jk_m'] = np.mean(np.array([x[0] for x in tuning_data['osi_jackknife']]))
+        record['osi_jk_sd'] = np.std(np.array([x[0] for x in tuning_data['osi_jackknife']]))
+        record['osi_jk_n'] = np.size(np.array([x[0] for x in tuning_data['osi_jackknife']]))
+        record['osi_angle_jk_m'] = np.mean(np.array([x[1] for x in tuning_data['osi_jackknife']]))
+        record['osi_angle_jk_sd'] = np.std(np.array([x[1] for x in tuning_data['osi_jackknife']]))
+        record['osi_angle_jk_n'] = np.size(np.array([x[1] for x in tuning_data['osi_jackknife']]))
+        
+        record['vecsum'] = tuning_data['vector_sum'][0]
+        record['vecsum_angle'] = tuning_data['vector_sum'][1]
+        record['vecsum_jk_m'] = np.mean(np.array([x[0] for x in tuning_data['vector_sum_jackknife']]))
+        record['vecsum_jk_sd'] = np.std(np.array([x[0] for x in tuning_data['vector_sum_jackknife']]))
+        record['vecsum_jk_n'] = np.size(np.array([x[0] for x in tuning_data['vector_sum_jackknife']]))
+        record['vecsum_angle_jk_m'] = np.mean(np.array([x[1] for x in tuning_data['vector_sum_jackknife']]))
+        record['vecsum_angle_jk_sd'] = np.std(np.array([x[1] for x in tuning_data['vector_sum_jackknife']]))
+        record['vecsum_angle_jk_n'] = np.size(np.array([x[1] for x in tuning_data['vector_sum_jackknife']]))
+        
+        if ax:
+            ax.plot(np.pi/2-ori,m_rate,color='k')
+            ax.errorbar(np.pi/2-ori,m_rate,yerr=sem,capsize=0,color='k')
+
+            vec_sum_ang = tuning_data['vector_sum'][1]
+            vec_sum_val = tuning_data['vector_sum'][0]
+
+            ax.plot([np.pi/2-tuning_data['osi'][1],np.pi/2-tuning_data['osi'][1]],[0,vec_sum_val],'r',linewidth=5,alpha=0.5)
+
+            for jk_sam in tuning_data['vector_sum_jackknife']:
+                plt.plot([np.pi/2-jk_sam[1],np.pi/2-jk_sam[1]],[0,jk_sam[0]],'k',linewidth=2.5,alpha=0.1)
+            ax.plot([np.pi/2-vec_sum_ang,np.pi/2-vec_sum_ang],[0,vec_sum_val],'g',linewidth=5,alpha=0.5)
+            ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
+                    horizontalalignment='right',verticalalignment='bottom',fontsize=5)
+    else:
+        if ax:
+            ax.clear()
+            ax.grid(False)
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.text(0,0,failed_why,fontsize=6,horizontalalignment='center',verticalalignment='center')
+            
+def get_or_tuning_dict(spike_raster,trial_numbers,orientations):
+    or_tuning = {'orientation':[],'m_rate':[],'std_rate':[],'n_trials':[]}
+    spikes_found = False
+    for orn in numpy.unique(orientations):
+        # find those trials and find mean and std 
+        trs = trial_numbers[orientations==orn]
+        spike_nums_that_or = [numpy.size(spike_raster[tr]) for tr in trs]
+        sp_mean_that_or = numpy.mean(spike_nums_that_or)
+        if sp_mean_that_or != 0:
+            spikes_found = True
+        sp_std_that_or = numpy.std(spike_nums_that_or)
+        or_tuning['orientation'].append(orn)
+        or_tuning['n_trials'].append(numpy.size(trs))
+        or_tuning['m_rate'].append(sp_mean_that_or)
+        or_tuning['std_rate'].append(sp_std_that_or)
+    if not spikes_found:
+        print('Non spikes in orientation tuning for that unit')
+    return(or_tuning, spikes_found)        
+    
+def get_or_tuning(location, sess, unit):
+    unit_details = {}
+    failed_why = None
+    with open(os.path.join(location,sess,'spike_and_trials.pickle'),'rb') as f:
+        data = pickle.load(f)
+    try:
+        stepname,durations = get_orientation_tuning_stepname(sess)
+    except:
+        print('failed to get stepname')
+        stepname = None
+    framechan,shift = get_frame_channel(sess)
+    
+    if not stepname: 
+        failed_why = 'no_or_tuning_stepname'
+        return unit_details, failed_why
+    
+    trial_numbers = numpy.asarray(data['trial_records']['trial_number'])
+    step_names = numpy.asarray(data['trial_records']['step_name'])
+    contrasts = numpy.asarray(data['trial_records']['contrast'])
+    max_durations = numpy.asarray(data['trial_records']['max_duration'])
+    phases = numpy.asarray(data['trial_records']['phase'])
+    orientations = numpy.asarray(data['trial_records']['orientation'])
+    
+    which_step = step_names==stepname
+    trial_numbers = trial_numbers[which_step]
+    step_names = step_names[which_step]
+    contrasts = contrasts[which_step]
+    max_durations = max_durations[which_step]
+    phases = phases[which_step]
+    orientations = orientations[which_step]
+    frame_start_index = []
+    frame_end_index = []    
+    for trial_number in trial_numbers:
+        event_for_trial = data['trial_records']['events']['ttl_events'][trial_number]
+        if shift:
+            frame_start_index.append(event_for_trial[framechan]['rising'][1])
+            frame_end_index.append(event_for_trial[framechan]['rising'][-2])
+        else:
+            frame_start_index.append(event_for_trial[framechan]['rising'][0])
+            frame_end_index.append(event_for_trial[framechan]['rising'][-1])
+            
+    frame_start_index = numpy.asarray(frame_start_index)
+    frame_end_index = numpy.asarray(frame_end_index)
+        
+    spike_time = numpy.squeeze(numpy.asarray(unit['spike_time']))
+    spike_raster = {}
+    for trial_number in trial_numbers:
+        frame_start_time = frame_start_index[trial_numbers==trial_number][0]/30000
+        frame_end_time = frame_end_index[trial_numbers==trial_number][0]/30000
+        
+        spikes_that_trial = spike_time[numpy.bitwise_and(spike_time>frame_start_time,spike_time<frame_end_time)]-frame_start_time
+        spike_raster[trial_number] = spikes_that_trial
+    or_tuning, spikes_found = get_or_tuning_dict(spike_raster,trial_numbers,orientations)
+    if spikes_found:
+        unit_details['or_tuning'] = or_tuning
+        unit_details['osi'] = get_OSI(or_tuning['orientation'],or_tuning['m_rate'])
+        unit_details['vector_sum'] = get_vector_sum(or_tuning['orientation'],or_tuning['m_rate'])
+        # jack_knife
+        unit_details['trial_jackknife'] = []
+        unit_details['osi_jackknife'] = []
+        unit_details['vector_sum_jackknife'] = []
+        for key in spike_raster:
+            # prep the copies
+            spike_raster_jack_knife = spike_raster.copy()
+            which_tr = trial_numbers==key
+            idx = numpy.where(numpy.logical_not(which_tr))[0]
+            trial_number_jack_knife = trial_numbers[idx]
+            orientation_jack_knife = orientations[idx]
+            del spike_raster_jack_knife[key]
+            
+            or_tuning_jack_knife,spikes_found_jackknife=get_or_tuning_dict(spike_raster_jack_knife,trial_number_jack_knife,orientation_jack_knife)
+            unit_details['trial_jackknife'].append(key)
+            unit_details['osi_jackknife'].append(get_OSI(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
+            unit_details['vector_sum_jackknife'].append(get_vector_sum(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
+        print('done_unit')
+    else:
+        unit_details = {}
+        failed_why = 'no_spikes'
+    return unit_details, failed_why
