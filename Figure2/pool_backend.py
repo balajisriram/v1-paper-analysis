@@ -1,4 +1,5 @@
 from Figure2.util import get_unit_details, plot_ISI, plot_unit_waveform,plot_unit_stability, plot_unit_quality,plot_firing_rate,plot_or_tuning
+import os
 from Util.util import get_unit_id, get_unit_depth, get_subject_from_session, get_session_date
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
@@ -10,6 +11,22 @@ import pandas as pd
 session_type = ['phys', 'behaved']
 base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
 save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
+
+def plot_unit(fig_ref, unit, loc, this_neuron_record):
+    ax1 = plt.subplot2grid((5,3),(0,0),colspan=2)
+    this_neuron_record = plot_ISI(unit, ax1, this_neuron_record)
+    ax2 = plt.subplot2grid((5,3),(0,2),colspan=1)
+    this_neuron_record = plot_unit_waveform(unit, ax2, this_neuron_record)
+    ax3 = plt.subplot2grid((5,3),(1,0),colspan=2)
+    this_neuron_record = plot_unit_stability(unit, loc, this_neuron_record, ax=ax3)
+    ax4 = plt.subplot2grid((5,3),(1,2),colspan=1)
+    this_neuron_record = plot_unit_quality(unit, loc, this_neuron_record, ax=ax4)
+    ax5 = plt.subplot2grid((5,3),(2,0),colspan=2)
+    this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
+    ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
+    this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
+
+    return this_neuron_record
 
 
 def process_session(session_type_idx,session_folder,base_loc):
