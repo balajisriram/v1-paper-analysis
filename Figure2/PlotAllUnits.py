@@ -13,14 +13,14 @@ session_records = []
 session_type = ['phys', 'behaved']
 
 # linux
-# base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
-# save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
-# neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
+base_locs = ['/home/bsriram/data/DetailsProcessedPhysOnly', '/home/bsriram/data/DetailsProcessedBehaved']
+save_locs = ['/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedPhysOnly', '/home/bsriram/data/Analysis/SummaryDetails/DetailsProcessedBehaved']
+neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
 
 # windows
-base_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedPhysOnly', r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedBehaved']
-save_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails\DetailsProcessedPhysOnly', r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails\DetailsProcessedBehaved']
-neuron_save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails'
+# base_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedPhysOnly', r'C:\Users\bsriram\Desktop\Data_V1Paper\DetailsProcessedBehaved']
+# save_locs = [r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails\DetailsProcessedPhysOnly', r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails\DetailsProcessedBehaved']
+# neuron_save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails'
     
 def process_session(session_type_idx,session_folder,base_loc):
     print('accessible')
