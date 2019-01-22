@@ -11,6 +11,14 @@ from scipy.stats import kde
 from Util.ClusterQuality import cluster_quality_core
 from Util.util import get_frame_channel
 
+import matplotlib as mpl
+
+
+
+label_size = 8
+mpl.rcParams['xtick.labelsize'] = label_size 
+mpl.rcParams['ytick.labelsize'] = label_size 
+
 def get_model(loc):
     kwik_file = [f for f in os.listdir(loc) if f.endswith('.kwik') and '100' in f]
     if len(kwik_file)>1 or len(kwik_file)==0:
@@ -482,3 +490,19 @@ def get_or_tuning(location, sess, unit):
         unit_details = {}
         failed_why = 'no_spikes'
     return unit_details, failed_why
+    
+def plot_unit(fig_ref, unit, loc, this_neuron_record):
+    ax1 = plt.subplot2grid((5,3),(0,0),colspan=2)
+    this_neuron_record = plot_ISI(unit, ax1, this_neuron_record)
+    ax2 = plt.subplot2grid((5,3),(0,2),colspan=1)
+    this_neuron_record = plot_unit_waveform(unit, ax2, this_neuron_record)
+    ax3 = plt.subplot2grid((5,3),(1,0),colspan=2)
+    this_neuron_record = plot_unit_stability(unit, loc, this_neuron_record, ax=ax3)
+    ax4 = plt.subplot2grid((5,3),(1,2),colspan=1)
+    this_neuron_record = plot_unit_quality(unit, loc, this_neuron_record, ax=ax4)
+    ax5 = plt.subplot2grid((5,3),(2,0),colspan=2)
+    this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
+    ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
+    this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
+
+    return this_neuron_record
