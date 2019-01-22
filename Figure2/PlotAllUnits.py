@@ -66,14 +66,17 @@ def process_session(session_type_idx,session_folder,base_loc):
     return neurons_that_session, session_folder
 
     
-def collect_result(neurons_that_session, session_folder):
+def collect_result(result):
+    neurons_that_session, session_folder = result
     with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
         f.create_dataset(session_folder, data=neurons_that_session)
-    
+
+def handle_error(er):
+    print(er)
         
 if __name__=='__main__':
     global session_records
-    pool = mp.Pool(mp.cpu_count())
+    pool = mp.Pool(8) # 8 simulataneous processes
 
     # for phys
     base_loc = base_locs[0]
@@ -81,7 +84,7 @@ if __name__=='__main__':
     folder_list.sort()
     # session_records1 = [pool.apply(process_session, args=(0, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
-        pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result)
+        pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
 
     pool.close()
     pool.join()

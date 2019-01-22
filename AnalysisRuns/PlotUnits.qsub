@@ -8,6 +8,7 @@
 #$ -m be 
 #$ -e error.log 
 #$ -o output.log 
+#$ -pe openmpi-fillup 8
 
 ##########################################################################
 # Start your script here #
