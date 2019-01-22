@@ -8,6 +8,7 @@ import pickle
 import pandas as pd
 import matplotlib as mpl
 import multiprocessing as mp
+import h5py
 
 session_records = []
 session_type = ['phys', 'behaved']
@@ -62,11 +63,13 @@ def process_session(session_type_idx,session_folder,base_loc):
                 pdf.savefig()  # saves the current figure into a pdf page
                 plt.close()
                 neurons_that_session.append(this_neuron_record)
-    return neurons_that_session
+    return neurons_that_session, session_folder
 
-def collect_result(result):
-    global session_records
-    session_records.append(result)
+    
+def collect_result(neurons_that_session, session_folder):
+    with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
+        f.create_dataset(session_folder, data=neurons_that_session)
+    
         
 if __name__=='__main__':
     global session_records
@@ -91,8 +94,3 @@ if __name__=='__main__':
     # session_records1 = [pool.apply(process_session, args=(1, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
         pool.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result)
-
-        
-    # pickle the results
-    with open(os.path.join(neuron_save_loc,'NeuronData.pickle'),'wb') as f:
-        pickle.dump(session_records, f, pickle.HIGHEST_PROTOCOL)
