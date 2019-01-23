@@ -85,28 +85,33 @@ def handle_error(er):
     print(er)
         
 if __name__=='__main__':
-    pool1 = mp.Pool(8) # 8 simulataneous processes
+    pool = mp.Pool(8) # 8 simulataneous processes
     print('Starting phys...')
     # for phys
     base_loc = base_locs[0]
-    folder_list = os.listdir(base_loc)
-    folder_list.sort()
-    # session_records1 = [pool.apply(process_session, args=(0, session_folder, base_loc)) for session_folder in folder_list]
-    for session_folder in folder_list:
-        pool1.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
+    folder_list_phys = os.listdir(base_loc)
+    folder_list_phys.sort()
+    sess_idx_phys = [0 for x in folder_list_phys]
+    base_locs_phys = [base_loc for x in folder_list_phys]
+    collated_phys = [(x,y,z) for x,y,z in zip(sess_idx_phys,folder_list_phys,base_locs_phys)]
+    
+    
+    # for behaved
+    base_loc = base_locs[1]
+    folder_list_beh = os.listdir(base_loc)
+    folder_list_beh.sort()
+    sess_idx_beh = [1 for x in folder_list_phys]
+    base_locs_beh = [base_loc for x in folder_list_beh]
+    collated_beh = [(x,y,z) for x,y,z in zip(sess_idx_phys,folder_list_phys,base_locs_phys)]
+    
+    # now collate them
+    collated_all = collated_phys
+    for x in collated_beh:
+        collated_all.append(x)
+    
+    for job in collated_all:
+        pool.apply_async(process_session, args=(job[0],job[1],[job3]), callback=collect_result, error_callback=handle_error)
     
     print('Done for phys')
     
-    pool1.close()
-    pool2 = mp.Pool(8) # 8 simulataneous processes
-    
-    print('Starting behaved...')
-    # for behaved
-    base_loc = base_locs[1]
-    folder_list = os.listdir(base_loc)
-    folder_list.sort()
-    # session_records1 = [pool.apply(process_session, args=(1, session_folder, base_loc)) for session_folder in folder_list]
-    for session_folder in folder_list:
-        pool2.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
-    print('Done for behaved')
-    pool2.close()
+
