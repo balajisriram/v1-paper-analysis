@@ -76,6 +76,8 @@ def collect_result(result):
     print('DONE::',session_folder)
     # with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
         # f.create_dataset(session_folder, data=neurons_that_session)
+    with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
+        f.create_dataset(session_folder, data=session_folder)
     with open(os.path.join(neuron_save_loc,'FinishedSession.txt'),'a') as f:
         f.write(session_folder+'\n')
 
@@ -92,9 +94,7 @@ if __name__=='__main__':
     # session_records1 = [pool.apply(process_session, args=(0, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
         pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
-        
-    pool.close()
-    pool.join()
+
     print('Done for phys')
     print('Starting behaved...')
     # for behaved
