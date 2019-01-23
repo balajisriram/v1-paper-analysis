@@ -84,7 +84,7 @@ def handle_error(er):
         
 if __name__=='__main__':
     pool = mp.Pool(8) # 8 simulataneous processes
-
+    print('Starting phys...')
     # for phys
     base_loc = base_locs[0]
     folder_list = os.listdir(base_loc)
@@ -94,7 +94,7 @@ if __name__=='__main__':
         pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
     print('Done for phys')
     pool.join()
-    
+    print('Starting behaved...'))
     # for behaved
     base_loc = base_locs[1]
     folder_list = os.listdir(base_loc)
@@ -102,4 +102,5 @@ if __name__=='__main__':
     # session_records1 = [pool.apply(process_session, args=(1, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
         pool.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
+    print('Done for behaved')
     pool.close()
