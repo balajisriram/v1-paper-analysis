@@ -93,8 +93,6 @@ if __name__=='__main__':
     for session_folder in folder_list:
         pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
 
-    pool.close()
-    pool.join()
 
     
     # for behaved
