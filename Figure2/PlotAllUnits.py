@@ -110,7 +110,7 @@ if __name__=='__main__':
         collated_all.append(x)
     
     for job in collated_all:
-        pool.apply_async(process_session, args=(job[0],job[1],[job3]), callback=collect_result, error_callback=handle_error)
+        pool.apply_async(process_session, args=(job[0],job[1],[job[2]), callback=collect_result, error_callback=handle_error)
     
     print('Done for phys')
     
