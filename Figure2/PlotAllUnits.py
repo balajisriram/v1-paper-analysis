@@ -64,8 +64,11 @@ def process_session(session_type_idx,session_folder,base_loc):
                 plt.close()
                 neurons_that_session.append(this_neuron_record)
         fig = plt.figure(figsize=(8.5,11), dpi=300, frameon=False, facecolor=None)
-        plt.subplot(1,1,1)
-    return neurons_that_session, session_folder
+        ax = plt.subplot(1,1,1)
+        ax.text(0.5,0.5,'DONE!')
+        pdf.savefig()
+        plt.close()
+    return (neurons_that_session, session_folder)
 
     
 def collect_result(result):
@@ -73,12 +76,13 @@ def collect_result(result):
     print('DONE::',session_folder)
     with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
         f.create_dataset(session_folder, data=neurons_that_session)
+    with open(os.path.join(neuron_save_loc,'FinishedSession.txt'),'a') as f:
+        f.write(session_folder+'\n')
 
 def handle_error(er):
     print(er)
         
 if __name__=='__main__':
-    global session_records
     pool = mp.Pool(8) # 8 simulataneous processes
 
     # for phys
