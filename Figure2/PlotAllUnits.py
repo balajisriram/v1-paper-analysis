@@ -9,6 +9,10 @@ import pandas as pd
 import matplotlib as mpl
 import multiprocessing as mp
 import h5py
+import pprint
+
+ppr = pprint.PrettyPrinter(indent=2).pprint
+
 
 session_records = []
 session_type = ['phys', 'behaved']
@@ -108,9 +112,9 @@ if __name__=='__main__':
     collated_all = collated_phys
     for x in collated_beh:
         collated_all.append(x)
-    
+    ppr(collated_all)
     for job in collated_all:
-        pool.apply_async(process_session, args=(job[0],job[1],[job[2]), callback=collect_result, error_callback=handle_error)
+        pool.apply_async(process_session, args=(job[0],job[1],job[2]), callback=collect_result, error_callback=handle_error)
     
     print('Done for phys')
     
