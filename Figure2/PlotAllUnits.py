@@ -64,7 +64,7 @@ def process_session(session_type_idx,session_folder,base_loc):
                 plt.close()
                 neurons_that_session.append(this_neuron_record)
         fig = plt.figure(figsize=(8.5,11), dpi=300, frameon=False, facecolor=None)
-        plt.subplot()
+        plt.subplot(1,1,1)
     return neurons_that_session, session_folder
 
     
