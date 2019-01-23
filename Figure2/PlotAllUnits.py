@@ -92,8 +92,8 @@ if __name__=='__main__':
     # session_records1 = [pool.apply(process_session, args=(0, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
         pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
-
-
+    print('Done for phys')
+    pool.join()
     
     # for behaved
     base_loc = base_locs[1]
@@ -101,4 +101,5 @@ if __name__=='__main__':
     folder_list.sort()
     # session_records1 = [pool.apply(process_session, args=(1, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
-        pool.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result)
+        pool.apply_async(process_session, args=(1,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
+    pool.close()
