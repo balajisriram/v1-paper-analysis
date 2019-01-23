@@ -104,9 +104,9 @@ if __name__=='__main__':
     base_loc = base_locs[1]
     folder_list_beh = os.listdir(base_loc)
     folder_list_beh.sort()
-    sess_idx_beh = [1 for x in folder_list_phys]
+    sess_idx_beh = [1 for x in folder_list_beh]
     base_locs_beh = [base_loc for x in folder_list_beh]
-    collated_beh = [(x,y,z) for x,y,z in zip(sess_idx_phys,folder_list_phys,base_locs_phys)]
+    collated_beh = [(x,y,z) for x,y,z in zip(sess_idx_beh,folder_list_beh,base_locs_beh)]
     
     # now collate them
     collated_all = collated_phys
