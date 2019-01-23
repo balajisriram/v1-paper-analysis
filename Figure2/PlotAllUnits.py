@@ -72,17 +72,18 @@ def process_session(session_type_idx,session_folder,base_loc):
         ax.text(0.5,0.5,'DONE!')
         pdf.savefig()
         plt.close()
-    return session_folder, neurons_that_session
+        
+    data_filename = 'neural_record_%s.pickle' % session_folder
+    with open(os.path.join(save_locs[session_type_idx],data_filename),'wb') as f:
+        pickle.dump(neurons_that_session, f, pickle.HIGHEST_PROTOCOL)    
+    return session_folder
 
     
-def collect_result(result):
-    session_folder = result[0]
-    neurons_that_session = result[1]
-    print('DONE::',session_folder)
-    with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
-        f.create_dataset(session_folder, data=neurons_that_session)
+def collect_result(result):    
+    print('DONE::',result)
     with open(os.path.join(neuron_save_loc,'FinishedSession.txt'),'a') as f:
-        f.write(session_folder+'\n')
+        f.write(result+'\n')
+    
 
 def handle_error(er):
     print(er)
