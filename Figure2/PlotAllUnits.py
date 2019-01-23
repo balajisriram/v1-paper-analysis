@@ -98,6 +98,7 @@ if __name__=='__main__':
     print('Done for phys')
     
     pool.close()
+    pool.join()
     
     print('Starting behaved...')
     # for behaved
