@@ -63,11 +63,14 @@ def process_session(session_type_idx,session_folder,base_loc):
                 pdf.savefig()  # saves the current figure into a pdf page
                 plt.close()
                 neurons_that_session.append(this_neuron_record)
+        fig = plt.figure(figsize=(8.5,11), dpi=300, frameon=False, facecolor=None)
+        plt.subplot()
     return neurons_that_session, session_folder
 
     
 def collect_result(result):
     neurons_that_session, session_folder = result
+    print('DONE::',session_folder)
     with h5py.File(os.path.join(neuron_save_loc,'NeuronData.hdf'),'a') as f:
         f.create_dataset(session_folder, data=neurons_that_session)
 

@@ -297,31 +297,31 @@ def plot_unit_quality(unit, model_loc, record, ax=None):
     data_other = np.vstack((fet_x_other, fet_y_other))
     data_other = data_other.T
     
-    min_x = np.min([np.min(fet_x_that),np.min(fet_x_other)])
-    max_x = np.max([np.max(fet_x_that),np.max(fet_x_other)])
-    x = np.linspace(min_x,max_x,50)
-    min_y = np.min([np.min(fet_y_that),np.min(fet_y_other)])
-    max_y = np.max([np.max(fet_y_that),np.max (fet_y_other)])
-    y = np.linspace(min_y,max_y,50)
+    # min_x = np.min([np.min(fet_x_that),np.min(fet_x_other)])
+    # max_x = np.max([np.max(fet_x_that),np.max(fet_x_other)])
+    # x = np.linspace(min_x,max_x,50)
+    # min_y = np.min([np.min(fet_y_that),np.min(fet_y_other)])
+    # max_y = np.max([np.max(fet_y_that),np.max (fet_y_other)])
+    # y = np.linspace(min_y,max_y,50)
     
-    xx, yy = np.mgrid[min_x:max_x:100j, min_y:max_y:100j]
+    # xx, yy = np.mgrid[min_x:max_x:100j, min_y:max_y:100j]
     
-    k_that = kde.gaussian_kde(data_that.T)
-    z_that = k_that(np.vstack([xx.flatten(), yy.flatten()]))
+    # k_that = kde.gaussian_kde(data_that.T)
+    # z_that = k_that(np.vstack([xx.flatten(), yy.flatten()]))
 
-    k_other = kde.gaussian_kde(data_other.T)
-    z_other = k_other(np.vstack([xx.flatten(), yy.flatten()]))
+    # k_other = kde.gaussian_kde(data_other.T)
+    # z_other = k_other(np.vstack([xx.flatten(), yy.flatten()]))
     
     uq,cr = cluster_quality_core(fet_that,fet_other)
     record['isolation_distance'] = uq
     record['contamination_rate_from_mahal'] = cr
     
     if ax:
-        ax.hist2d(fet_x_that,fet_y_that,bins=30,cmap='Blues',alpha=0.5)
-        ax.contour(xx, yy, z_that.reshape(xx.shape),cmap='Blues')
+        # ax.hist2d(fet_x_that,fet_y_that,bins=30,cmap='Blues',alpha=0.5)
+        # ax.contour(xx, yy, z_that.reshape(xx.shape),cmap='Blues')
         
-        ax.hist2d(fet_x_other,fet_y_other,bins=30,cmap='Greys',alpha=0.5)
-        ax.contour(xx, yy, z_other.reshape(xx.shape),cmap='Greys')
+        # ax.hist2d(fet_x_other,fet_y_other,bins=30,cmap='Greys',alpha=0.5)
+        # ax.contour(xx, yy, z_other.reshape(xx.shape),cmap='Greys')
         if cr is not None:
             ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq=%2.3f;cr=%2.3f' %(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
         else:
