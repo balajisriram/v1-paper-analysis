@@ -94,7 +94,7 @@ if __name__=='__main__':
         pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
     print('Done for phys')
     pool.join()
-    print('Starting behaved...'))
+    print('Starting behaved...')
     # for behaved
     base_loc = base_locs[1]
     folder_list = os.listdir(base_loc)
