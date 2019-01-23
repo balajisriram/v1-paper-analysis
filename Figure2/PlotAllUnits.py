@@ -92,6 +92,9 @@ if __name__=='__main__':
     # session_records1 = [pool.apply(process_session, args=(0, session_folder, base_loc)) for session_folder in folder_list]
     for session_folder in folder_list:
         pool.apply_async(process_session, args=(0,session_folder,base_loc,), callback=collect_result, error_callback=handle_error)
+        
+    pool.close()
+    pool.join()
     print('Done for phys')
     print('Starting behaved...')
     # for behaved
