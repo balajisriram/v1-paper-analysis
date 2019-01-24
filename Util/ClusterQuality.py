@@ -53,12 +53,12 @@ def cluster_quality_core(fet_this, fet_other):
     if n_other > n_this and n_this > n_fet:
         md = numpy.zeros(n_other)
         md_self = numpy.zeros(n_this)
-
+        mean_feath_this = numpy.mean(fet_this,axis=0)
         for ii in range(0, n_other):
-            md[ii] = numpy.matmul(numpy.matmul(fet_other[ii, :]-numpy.mean(fet_this,axis=0), cov_this_inv), fet_other[ii, :]-numpy.mean(fet_this,axis=0))
+            md[ii] = numpy.matmul(numpy.matmul(fet_other[ii, :]-mean_feath_this, cov_this_inv), fet_other[ii, :]-mean_feath_this)
 
         for ii in range(0, n_this):
-            md_self[ii] = numpy.matmul(numpy.matmul(fet_this[ii, :]-numpy.mean(fet_this,axis=0), cov_this_inv), fet_this[ii, :]-numpy.mean(fet_this,axis=0))
+            md_self[ii] = numpy.matmul(numpy.matmul(fet_this[ii, :]-mean_feath_this, cov_this_inv), fet_this[ii, :]-mean_feath_this)
 
         md = numpy.sort(md)
         md_self = numpy.sort(md_self)
