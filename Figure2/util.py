@@ -10,7 +10,7 @@ import pandas
 from scipy.stats import kde
 from Util.ClusterQuality import cluster_quality_core
 from Util.util import get_frame_channel
-
+from fastkde import fastKDE
 import matplotlib as mpl
 
 
@@ -289,13 +289,15 @@ def plot_unit_quality(unit, model_loc, record, ax=None):
     
     fet_x_that = fet_that[:,fet_seq[0]]
     fet_y_that = fet_that[:,fet_seq[1]]
-    data_that = np.vstack((fet_x_that, fet_y_that))
-    data_that = data_that.T
+    pdf_that,axes_that = fastKDE.pdf(fet_x_that,fet_y_that)
+    # data_that = np.vstack((fet_x_that, fet_y_that))
+    # data_that = data_that.T
     
     fet_x_other = fet_other[:,fet_seq[0]]
     fet_y_other = fet_other[:,fet_seq[1]]
-    data_other = np.vstack((fet_x_other, fet_y_other))
-    data_other = data_other.T
+    pdf_other,axes_other = fastKDE.pdf(fet_x_other,fet_y_other)
+    # data_other = np.vstack((fet_x_other, fet_y_other))
+    # data_other = data_other.T
     
     # min_x = np.min([np.min(fet_x_that),np.min(fet_x_other)])
     # max_x = np.max([np.max(fet_x_that),np.max(fet_x_other)])
@@ -318,10 +320,10 @@ def plot_unit_quality(unit, model_loc, record, ax=None):
     
     if ax:
         # ax.hist2d(fet_x_that,fet_y_that,bins=30,cmap='Blues',alpha=0.5)
-        # ax.contour(xx, yy, z_that.reshape(xx.shape),cmap='Blues')
+        ax.contour(axes_that[0], axes_that[1], pdf_that,cmap='Blues',linewidths=[1,1,2,2,3,3])
         
         # ax.hist2d(fet_x_other,fet_y_other,bins=30,cmap='Greys',alpha=0.5)
-        # ax.contour(xx, yy, z_other.reshape(xx.shape),cmap='Greys')
+        ax.contour(axes_other[0], axes_other[1], pdf_other,cmap='Greys',linewidths=[1,1,2,2,3,3])
         if cr is not None:
             ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq=%2.3f;cr=%2.3f' %(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
         else:
