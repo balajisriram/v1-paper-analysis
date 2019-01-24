@@ -10,6 +10,7 @@ import matplotlib as mpl
 import multiprocessing as mp
 import h5py
 import pprint
+import pdb
 
 ppr = pprint.PrettyPrinter(indent=2).pprint
 
@@ -28,7 +29,6 @@ neuron_save_loc = '/home/bsriram/data/Analysis/SummaryDetails'
 # neuron_save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\SummaryDetails'
     
 def process_session(session_type_idx,session_folder,base_loc):
-    print('accessible')
     neurons_that_session = []
     summary_filename = 'UnitSummaryDetails_%s.pdf' % session_folder
     with PdfPages(os.path.join(save_locs[session_type_idx],summary_filename)) as pdf:
@@ -72,7 +72,6 @@ def process_session(session_type_idx,session_folder,base_loc):
         ax.text(0.5,0.5,'DONE!')
         pdf.savefig()
         plt.close()
-        
     data_filename = 'neural_record_%s.pickle' % session_folder
     with open(os.path.join(save_locs[session_type_idx],data_filename),'wb') as f:
         pickle.dump(neurons_that_session, f, pickle.HIGHEST_PROTOCOL)    

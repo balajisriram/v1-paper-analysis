@@ -342,6 +342,7 @@ def plot_firing_rate(unit, loc, record, ax=None):
     
     if ax:
         ax.plot(times,spike_rate,'k')
+    return record
         
 def plot_or_tuning(unit, loc, record, ax=None):
     tuning_data,failed_why = get_or_tuning(os.path.dirname(loc), os.path.basename(loc),unit)
@@ -385,12 +386,36 @@ def plot_or_tuning(unit, loc, record, ax=None):
             ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
                     horizontalalignment='right',verticalalignment='bottom',fontsize=5)
     else:
+        record['or_tuning_orientation'] = None
+        record['or_tuning_rate'] = None
+        record['or_tuning_sd'] = None
+        record['or_tuning_n_trials'] = None
+        record['or_tuning_sem'] = None
+        
+        record['osi'] = None
+        record['osi_angle'] = None
+        record['osi_jk_m'] = None
+        record['osi_jk_sd'] = None
+        record['osi_jk_n'] = None
+        record['osi_angle_jk_m'] = None
+        record['osi_angle_jk_sd'] = None
+        record['osi_angle_jk_n'] = None
+        
+        record['vecsum'] = None
+        record['vecsum_angle'] = None
+        record['vecsum_jk_m'] = None
+        record['vecsum_jk_sd'] = None
+        record['vecsum_jk_n'] = None
+        record['vecsum_angle_jk_m'] = None
+        record['vecsum_angle_jk_sd'] = None
+        record['vecsum_angle_jk_n'] = None
         if ax:
             ax.clear()
             ax.grid(False)
             ax.set_xticklabels([])
             ax.set_yticklabels([])
             ax.text(0,0,failed_why,fontsize=6,horizontalalignment='center',verticalalignment='center')
+    return record
             
 def get_or_tuning_dict(spike_raster,trial_numbers,orientations):
     or_tuning = {'orientation':[],'m_rate':[],'std_rate':[],'n_trials':[]}
@@ -504,5 +529,4 @@ def plot_unit(fig_ref, unit, loc, this_neuron_record):
     this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
     ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
     this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
-
     return this_neuron_record
