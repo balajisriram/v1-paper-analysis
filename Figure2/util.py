@@ -225,7 +225,7 @@ def plot_unit_waveform(unit,ax, record):
     record['p2t_time'] = p2t_time
     # ax.plot(ax.get_xlim(),[0,0,],'--',color='black')
     # ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
-            horizontalalignment='right',verticalalignment='bottom',fontsize=5)
+            # horizontalalignment='right',verticalalignment='bottom',fontsize=5)
     
     return record
     
