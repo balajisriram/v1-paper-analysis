@@ -128,9 +128,9 @@ def plot_ISI(unit, ax, record):
     isi = np.diff(spike_train, axis=0)
     histc, binedge = np.histogram(isi,range=(0,0.025),bins=100)
     
-    ax.bar(binedge[0:100]*1000,histc,align='edge',edgecolor='none',color='b')
-    ax.plot([1,1],ax.get_ylim(),'r')
-    ax.plot([2,2],ax.get_ylim(),'r--')
+    #ax.bar(binedge[0:100]*1000,histc,align='edge',edgecolor='none',color='b')
+    #ax.plot([1,1],ax.get_ylim(),'r')
+    #ax.plot([2,2],ax.get_ylim(),'r--')
     
     
     num_violations = np.sum(isi<0.001)
@@ -139,7 +139,7 @@ def plot_ISI(unit, ax, record):
     total_rate = n_spikes/total_time
     record['isi_violation_rate'] = violation_rate
     record['spike_rate'] = total_rate
-    ax.text(ax.get_xlim()[1],ax.get_ylim()[1],'viol_rate=%2.3fHz of %2.3fHz' % (violation_rate,total_rate), horizontalalignment='right',verticalalignment='top',fontsize=6)
+    #ax.text(ax.get_xlim()[1],ax.get_ylim()[1],'viol_rate=%2.3fHz of %2.3fHz' % (violation_rate,total_rate), horizontalalignment='right',verticalalignment='top',fontsize=6)
     return record
 
 def get_fwhm(wvform, t, ax = None):    
@@ -162,7 +162,8 @@ def get_fwhm(wvform, t, ax = None):
     # print('min_idx::%d, left:: %d, right %d' %(wvform_min_idx, idx_left, idx_right))
     spike_width = t[idx_right]-t[idx_left]
     if ax:
-        ax.plot([t[idx_left],t[idx_right]],[half_min,half_min],'-',color='blue')
+        pass
+        #ax.plot([t[idx_left],t[idx_right]],[half_min,half_min],'-',color='blue')
     return spike_width
 
 def get_peak_trough(wvform, t, ax=None):
@@ -176,8 +177,9 @@ def get_peak_trough(wvform, t, ax=None):
     p2t_time = t[wvform_max_idx]-t[wvform_min_idx]
     
     if ax:
-        ax.plot(t[wvform_max_idx],wvform[wvform_max_idx],'gx')
-        ax.plot(t[wvform_min_idx],wvform[wvform_min_idx],'rx')
+        pass
+        # ax.plot(t[wvform_max_idx],wvform[wvform_max_idx],'gx')
+        # ax.plot(t[wvform_min_idx],wvform[wvform_min_idx],'rx')
     
     return p2t_ratio,p2t_time
     
@@ -208,11 +210,11 @@ def plot_unit_waveform(unit,ax, record):
     max_idx = np.argmin(interp_m)
     record['peak_snr_wvform'] = interp_m[max_idx]/interp_sd[max_idx]
     
-    ax.plot(interp_x_vals,interp_m,color="black",linewidth=2)
-    ax.plot(interp_x_vals,interp_m+interp_sd,"-",color="black",linewidth=1)
-    ax.plot(interp_x_vals,interp_m-interp_sd,"-",color="black",linewidth=1)
-    ax.xaxis.set_major_locator(plt.MaxNLocator(3))
-    ax.yaxis.set_major_locator(plt.MaxNLocator(3))
+    # ax.plot(interp_x_vals,interp_m,color="black",linewidth=2)
+    # ax.plot(interp_x_vals,interp_m+interp_sd,"-",color="black",linewidth=1)
+    # ax.plot(interp_x_vals,interp_m-interp_sd,"-",color="black",linewidth=1)
+    # ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+    # ax.yaxis.set_major_locator(plt.MaxNLocator(3))
     
     fwhm = get_fwhm(interp_m,interp_x_vals, ax=ax)
     fwhm = 1000.*fwhm # in ms
@@ -221,8 +223,8 @@ def plot_unit_waveform(unit,ax, record):
     record['fwhm'] = fwhm
     record['p2t_ratio'] = p2t_ratio
     record['p2t_time'] = p2t_time
-    ax.plot(ax.get_xlim(),[0,0,],'--',color='black')
-    ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
+    # ax.plot(ax.get_xlim(),[0,0,],'--',color='black')
+    # ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
             horizontalalignment='right',verticalalignment='bottom',fontsize=5)
     
     return record
@@ -261,8 +263,9 @@ def plot_unit_stability(unit, model_loc, record, ax=None):
     that_choice = np.random.choice([True,False],size=fet_x_that.shape,p=[0.02,0.98])
     other_choice = np.random.choice([True,False],size=fet_x_other.shape,p=[0.01,0.99])
     if ax:
-        ax.plot(spike_time_that[that_choice],fet_x_that[that_choice],'o',color='blue',markersize=5,markeredgecolor='none')
-        ax.plot(spike_time_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
+        pass
+        # ax.plot(spike_time_that[that_choice],fet_x_that[that_choice],'o',color='blue',markersize=5,markeredgecolor='none')
+        # ax.plot(spike_time_other[other_choice],fet_x_other[other_choice],'o',color=(0.7,0.7,0.7),markersize=2,markeredgecolor='none')
 
     return record
     
@@ -284,18 +287,18 @@ def plot_unit_quality(unit, model_loc, record, ax=None):
     fet_other = np.squeeze(fet[other_cluster_idx,:])
     
     # find the feature dimensions with greatest mean values
-    fet_that_mean = np.mean(fet_that,axis=0)
-    fet_seq = np.argsort(-1*np.absolute(fet_that_mean))
+    # fet_that_mean = np.mean(fet_that,axis=0)
+    # fet_seq = np.argsort(-1*np.absolute(fet_that_mean))
     
-    fet_x_that = fet_that[:,fet_seq[0]]
-    fet_y_that = fet_that[:,fet_seq[1]]
-    pdf_that,axes_that = fastKDE.pdf(fet_x_that,fet_y_that)
+    # fet_x_that = fet_that[:,fet_seq[0]]
+    # fet_y_that = fet_that[:,fet_seq[1]]
+    # pdf_that,axes_that = fastKDE.pdf(fet_x_that,fet_y_that)
     # data_that = np.vstack((fet_x_that, fet_y_that))
     # data_that = data_that.T
     
-    fet_x_other = fet_other[:,fet_seq[0]]
-    fet_y_other = fet_other[:,fet_seq[1]]
-    pdf_other,axes_other = fastKDE.pdf(fet_x_other,fet_y_other)
+    # fet_x_other = fet_other[:,fet_seq[0]]
+    # fet_y_other = fet_other[:,fet_seq[1]]
+    # pdf_other,axes_other = fastKDE.pdf(fet_x_other,fet_y_other)
     # data_other = np.vstack((fet_x_other, fet_y_other))
     # data_other = data_other.T
     
@@ -320,14 +323,16 @@ def plot_unit_quality(unit, model_loc, record, ax=None):
     
     if ax:
         # ax.hist2d(fet_x_that,fet_y_that,bins=30,cmap='Blues',alpha=0.5)
-        ax.contour(axes_that[0], axes_that[1], pdf_that,cmap='Blues',linewidths=[1,1,2,2,3,3])
+        # ax.contour(axes_that[0], axes_that[1], pdf_that,cmap='Blues',linewidths=[1,1,2,2,3,3])
         
         # ax.hist2d(fet_x_other,fet_y_other,bins=30,cmap='Greys',alpha=0.5)
-        ax.contour(axes_other[0], axes_other[1], pdf_other,cmap='Greys',linewidths=[1,1,2,2,3,3])
+        # ax.contour(axes_other[0], axes_other[1], pdf_other,cmap='Greys',linewidths=[1,1,2,2,3,3])
         if cr is not None:
-            ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq=%2.3f;cr=%2.3f' %(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
+            pass
+            # ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq=%2.3f;cr=%2.3f' %(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
         else:
-            ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq={0};cr={1}'.format(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
+            pass
+            # ax.text(ax.get_xlim()[1],ax.get_ylim()[1]-100,'uq={0};cr={1}'.format(uq,cr), horizontalalignment='right',verticalalignment='top',fontsize=6)
     
     return record
 
@@ -343,7 +348,8 @@ def plot_firing_rate(unit, loc, record, ax=None):
         times.append(t)
     
     if ax:
-        ax.plot(times,spike_rate,'k')
+        pass
+        # ax.plot(times,spike_rate,'k')
     return record
         
 def plot_or_tuning(unit, loc, record, ax=None):
@@ -374,18 +380,19 @@ def plot_or_tuning(unit, loc, record, ax=None):
         record['vecsum_angle_jk_n'] = np.size(np.array([x[1] for x in tuning_data['vector_sum_jackknife']]))
         
         if ax:
-            ax.plot(np.pi/2-ori,m_rate,color='k')
-            ax.errorbar(np.pi/2-ori,m_rate,yerr=sem,capsize=0,color='k')
+            # ax.plot(np.pi/2-ori,m_rate,color='k')
+            # ax.errorbar(np.pi/2-ori,m_rate,yerr=sem,capsize=0,color='k')
 
             vec_sum_ang = tuning_data['vector_sum'][1]
             vec_sum_val = tuning_data['vector_sum'][0]
 
-            ax.plot([np.pi/2-tuning_data['osi'][1],np.pi/2-tuning_data['osi'][1]],[0,vec_sum_val],'r',linewidth=5,alpha=0.5)
+            # ax.plot([np.pi/2-tuning_data['osi'][1],np.pi/2-tuning_data['osi'][1]],[0,vec_sum_val],'r',linewidth=5,alpha=0.5)
 
             for jk_sam in tuning_data['vector_sum_jackknife']:
-                plt.plot([np.pi/2-jk_sam[1],np.pi/2-jk_sam[1]],[0,jk_sam[0]],'k',linewidth=2.5,alpha=0.1)
-            ax.plot([np.pi/2-vec_sum_ang,np.pi/2-vec_sum_ang],[0,vec_sum_val],'g',linewidth=5,alpha=0.5)
-            ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
+                pass
+                # plt.plot([np.pi/2-jk_sam[1],np.pi/2-jk_sam[1]],[0,jk_sam[0]],'k',linewidth=2.5,alpha=0.1)
+            # ax.plot([np.pi/2-vec_sum_ang,np.pi/2-vec_sum_ang],[0,vec_sum_val],'g',linewidth=5,alpha=0.5)
+            # ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
                     horizontalalignment='right',verticalalignment='bottom',fontsize=5)
     else:
         record['or_tuning_orientation'] = None
@@ -521,14 +528,19 @@ def get_or_tuning(location, sess, unit):
 def plot_unit(fig_ref, unit, loc, this_neuron_record):
     ax1 = plt.subplot2grid((5,3),(0,0),colspan=2)
     this_neuron_record = plot_ISI(unit, ax1, this_neuron_record)
+    
     ax2 = plt.subplot2grid((5,3),(0,2),colspan=1)
     this_neuron_record = plot_unit_waveform(unit, ax2, this_neuron_record)
+    
     ax3 = plt.subplot2grid((5,3),(1,0),colspan=2)
     this_neuron_record = plot_unit_stability(unit, loc, this_neuron_record, ax=ax3)
+    
     ax4 = plt.subplot2grid((5,3),(1,2),colspan=1)
     this_neuron_record = plot_unit_quality(unit, loc, this_neuron_record, ax=ax4)
+    
     ax5 = plt.subplot2grid((5,3),(2,0),colspan=2)
     this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
+    
     ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
     this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
     return this_neuron_record
