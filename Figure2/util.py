@@ -379,21 +379,20 @@ def plot_or_tuning(unit, loc, record, ax=None):
         record['vecsum_angle_jk_sd'] = np.std(np.array([x[1] for x in tuning_data['vector_sum_jackknife']]))
         record['vecsum_angle_jk_n'] = np.size(np.array([x[1] for x in tuning_data['vector_sum_jackknife']]))
         
-        if ax:
+        # if ax:
             # ax.plot(np.pi/2-ori,m_rate,color='k')
             # ax.errorbar(np.pi/2-ori,m_rate,yerr=sem,capsize=0,color='k')
 
-            vec_sum_ang = tuning_data['vector_sum'][1]
-            vec_sum_val = tuning_data['vector_sum'][0]
+            # vec_sum_ang = tuning_data['vector_sum'][1]
+            # vec_sum_val = tuning_data['vector_sum'][0]
 
             # ax.plot([np.pi/2-tuning_data['osi'][1],np.pi/2-tuning_data['osi'][1]],[0,vec_sum_val],'r',linewidth=5,alpha=0.5)
 
-            for jk_sam in tuning_data['vector_sum_jackknife']:
-                pass
+            # for jk_sam in tuning_data['vector_sum_jackknife']:
                 # plt.plot([np.pi/2-jk_sam[1],np.pi/2-jk_sam[1]],[0,jk_sam[0]],'k',linewidth=2.5,alpha=0.1)
             # ax.plot([np.pi/2-vec_sum_ang,np.pi/2-vec_sum_ang],[0,vec_sum_val],'g',linewidth=5,alpha=0.5)
             # ax.text(ax.get_xlim()[1],ax.get_ylim()[0],'fwhm=%2.3f\np2tT=%2.3f\np2tR=%2.3f\nsnr=%2.3f'%(fwhm,p2t_time,p2t_ratio,record['peak_snr_wvform']),
-                    horizontalalignment='right',verticalalignment='bottom',fontsize=5)
+                    # horizontalalignment='right',verticalalignment='bottom',fontsize=5)
     else:
         record['or_tuning_orientation'] = None
         record['or_tuning_rate'] = None
@@ -418,12 +417,12 @@ def plot_or_tuning(unit, loc, record, ax=None):
         record['vecsum_angle_jk_m'] = None
         record['vecsum_angle_jk_sd'] = None
         record['vecsum_angle_jk_n'] = None
-        if ax:
-            ax.clear()
-            ax.grid(False)
-            ax.set_xticklabels([])
-            ax.set_yticklabels([])
-            ax.text(0,0,failed_why,fontsize=6,horizontalalignment='center',verticalalignment='center')
+        # if ax:
+            # ax.clear()
+            # ax.grid(False)
+            # ax.set_xticklabels([])
+            # ax.set_yticklabels([])
+            # ax.text(0,0,failed_why,fontsize=6,horizontalalignment='center',verticalalignment='center')
     return record
             
 def get_or_tuning_dict(spike_raster,trial_numbers,orientations):
