@@ -9,7 +9,7 @@ import importlib.machinery
 import types
 import pdb
 
-loader = importlib.machinery.SourceFileLoader('ClusterQuality',r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\ClusterQuality.py')
+loader = importlib.machinery.SourceFileLoader('ClusterQuality',r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\Util\ClusterQuality.py')
 CQMod = types.ModuleType(loader.name)
 loader.exec_module(CQMod)
 

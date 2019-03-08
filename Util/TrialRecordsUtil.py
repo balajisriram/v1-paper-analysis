@@ -1,13 +1,13 @@
 import scipy
 import scipy.io
 import pdb
-import numpy
+import numpy as np
 import os
 import importlib.machinery
 import types
 import pickle
 
-np64 = numpy.float64
+np64 = np.float64
 
 
 def import_module(name,file):
@@ -16,16 +16,185 @@ def import_module(name,file):
     loader.exec_module(mod)
     return mod
     
-def load_spike_and_trial_details(loc):
+def load_spike_and_trial_details_OE(loc):
     spike_and_trial_details = {}
     print('Loading trial details')
-    spike_and_trial_details['trial_records'] = load_trialrecs_to_dict(loc)
+    spike_and_trial_details['trial_records'] = load_trialrecs_to_dict_OE(loc)
     print('Loading spike details')
-    spike_and_trial_details['spike_records'] = load_spikerecs_to_dict(loc)
+    spike_and_trial_details['spike_records'] = load_spikerecs_to_dict_OE(loc)
     return spike_and_trial_details
     
+def load_spike_and_trial_details_plexon(loc):
+    spike_and_trial_details = {}
+    print('Loading trial details')
+    spike_and_trial_details['trial_records'] = load_trialrecs_to_dict_plexon(loc)
+    print('Loading spike details')
+    spike_and_trial_details['spike_records'] = load_spikerecs_to_dict_plexon(loc)
+    return spike_and_trial_details
     
-def load_trialrecs_to_dict(loc):
+
+    
+### PLEXON    
+def get_frames_for_trial_plexon(trial_times,frame_times,trial_idx):
+    trial_start_time,trial_end_time = get_trial_start_end_times_plexon(trial_times,trial_idx)
+    frame_for_trial = frame_times[np.bitwise_and(frame_times>=trial_start_time, frame_times<=trial_end_time)]
+    return frame_for_trial
+
+def get_trial_start_end_times_plexon(trial_times,trial_idx):
+    trial_start_time = np.squeeze(trial_times[trial_idx])
+    try: trial_end_time = np.squeeze(trial_times[trial_idx+1])
+    except IndexError: trial_end_time = np.inf
+    return trial_start_time,trial_end_time
+
+def get_trial_idx_plexon(trial_data,t_num):
+    t_nums = np.asarray([tr['trial_number'] for tr in trial_data])
+    idx = np.argwhere(t_nums==t_num)
+    return idx
+    
+def get_channel_events_plexon(trial_times,frame_times,good_tnums,trial_data):
+    trial_number = []
+    start_time = []
+    end_time = []
+    ttl_events = {}
+    for t in good_tnums:
+        t_idx = get_trial_idx_plexon(trial_data,t)
+        t_start,t_end = get_trial_start_end_times_plexon(trial_times,t_idx)
+        frames = get_frames_for_trial_plexon(trial_times,frame_times,t_idx)
+        trial_number.append(t)
+        start_time.append(t_start)
+        end_time.append(t_end)
+        ttl_event = {}
+        ttl_event['trial'] = t_start
+        ttl_event['frame'] = frames
+        ttl_events[t] = ttl_event
+    events = dict([('trial_number',trial_number),\
+                 ('start_time',start_time),\
+                 ('end_time',end_time),\
+                 ('ttl_events',ttl_events)])
+    return events
+
+    
+    
+    
+def load_trialrecs_to_dict_plexon(loc):
+    file = [f for f in os.listdir(loc) if f.startswith('trialRecords') and f.endswith('session_record')]
+    assert len(file)==1,'too many or too few trial Records. how is this possible? {0}'.format(loc)
+    
+    # load the event file
+    with open(os.path.join(loc,'event_data.pickle'),'rb') as f:
+        event_data = pickle.load(f,encoding='latin1')
+    # find the trial_records file
+    tr_file = [f for f in os.listdir(os.path.join(loc)) if f.endswith('.session_record')]
+    assert len(tr_file)==1, 'too many session record files found'
+    with open(os.path.join(loc,tr_file[0]),'rb') as f:
+        trial_data = pickle.load(f)
+    
+    # trial keys are different
+    trial_key = [f for f in list(event_data.keys()) if 'Trial' in f]
+    frame_key = [f for f in list(event_data.keys()) if 'Frame' in f]
+    assert len(trial_key)==1, 'which trial key to use? found {1}: "{0}"'.format(trial_key,len(trial_key))
+    assert len(frame_key)==1, 'which frame key to use? found {1}: "{0}"'.format(frame_key,len(frame_key))
+    
+    # from the event_data
+    trial_times = event_data[trial_key[0]]
+    frame_times = event_data[frame_key[0]]
+    # from the trial_records
+    trial_numbers = np.asarray([tr['trial_number'] for tr in trial_data])
+    if len(trial_numbers)>len(trial_times):
+        good_tnums = trial_numbers[0:len(trial_times)]
+    else:
+        good_tnums = trial_numbers
+    
+    trial_number = []
+    refresh_rate = []
+    step_name = []
+    stim_manager_name = []
+    trial_manager_name = []
+    afc_grating_type = []
+    trial_start_time = []
+    trial_end_time = []
+    
+    pix_per_cycs = []
+    driftfrequency = []
+    orientation = []
+    phase = []
+    contrast = []
+    max_duration = []
+    radius = []
+    annulus = []
+    waveform = []
+    radius_type = []
+    location = []
+    
+    led_on = []
+    led_intensity = []
+    
+    events = get_channel_events_plexon(trial_times,frame_times,good_tnums,trial_data)
+    for i,tR in enumerate(trial_data):
+        t_num = tR['trial_number']
+        if not t_num in good_tnums: continue
+        # this_trial_number = np64(tR['trialNumber'][0][0])
+        # if this_trial_number in events['trial_number']:
+            # which_in_messages = [True if x==this_trial_number else False for x in events['trial_number']]
+            # this_start_index = [x for i,x in enumerate(events['start_index']) if which_in_messages[i]==True]
+            # this_end_index = [x for i,x in enumerate(events['end_index']) if which_in_messages[i]==True]
+        # else:
+            # continue
+        
+        trial_number.append(np64(tR['trial_number']))
+        refresh_rate.append(np64(tR['chosen_stim']['Hz']))
+        
+        step_name.append(tR['current_step_name'])
+        stim_manager_name.append('NotApplicable')
+        trial_manager_name.append(tR['trial_manager_class'])
+        afc_grating_type.append('NotApplicable')
+        
+        t_start,t_end = get_trial_start_end_times_plexon(trial_times,get_trial_idx_plexon(trial_data,t_num))
+        trial_start_time.append(t_start)
+        trial_end_time.append(t_end)
+        
+        pix_per_cycs.append(np64(tR['chosen_stim']['deg_per_cyc']))
+        driftfrequency.append(np64(tR['chosen_stim']['drift_frequency']))
+        orientation.append(np64(tR['chosen_stim']['orientation']))
+        phase.append(np64(tR['chosen_stim']['phase']))
+        contrast.append(np64(tR['chosen_stim']['contrast']))
+        max_duration.append(np64(tR['chosen_stim']['duration']))
+        radius.append(np64(tR['chosen_stim']['radius']))
+        
+        annulus.append('None')
+        waveform.append('sine')
+        radius_type.append('HardEdge')
+        location.append(np64([0.5,0.5]))
+        led_on.append(np64(0.))
+        led_intensity.append(np64(0.))
+        
+    trial_records = dict([('trial_number',trial_number),\
+                         ('refresh_rate',refresh_rate),\
+                         ('step_name',step_name),\
+                         ('stim_manager_name',stim_manager_name),\
+                         ('trial_manager_name',trial_manager_name),\
+                         ('afc_grating_type',afc_grating_type),\
+                         ('trial_start_time',trial_start_time),\
+                         ('trial_end_time',trial_end_time),\
+                         ('pix_per_cycs',pix_per_cycs),\
+                         ('driftfrequency',driftfrequency),\
+                         ('orientation',orientation),\
+                         ('phase',phase),\
+                         ('contrast',contrast),\
+                         ('max_duration',max_duration),\
+                         ('radius',radius),\
+                         ('annulus',annulus),\
+                         ('waveform',waveform),\
+                         ('radius_type',radius_type),\
+                         ('location',location),\
+                         ('led_on',led_on),\
+                         ('led_intensity',led_intensity),\
+                         ('events',events)])
+                         
+    return trial_records
+
+### OPEN EPHYS
+def load_trialrecs_to_dict_OE(loc):
     file = [f for f in os.listdir(loc) if f.startswith('trialRecords')]
     if len(file) > 1 or len(file)==0:
         print(loc)
@@ -236,15 +405,17 @@ def get_channel_events(loc,events):
         
     return events
         
-def load_spikerecs_to_dict(loc):
-    CDMod = import_module('ClusterDetails','C:\\Users\\bsriram\\Desktop\\Code\\V1PaperAnalysis\\ClusterDetails.py')
+def load_spikerecs_to_dict_OE(loc):
+    CDMod = import_module('ClusterDetails','C:\\Users\\bsriram\\Desktop\\Code\\V1PaperAnalysis\\Util\\ClusterDetails.py')
     spike_details = CDMod.get_cluster_details(loc)
     return spike_details
-    
+
+load_spikerecs_to_dict_plexon = load_spikerecs_to_dict_OE
+
 if __name__=='__main__':
-    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\TEMP\m310_2017-05-16_13-51-53'
-    
-    with open(os.path.join(loc,'spike_and_trials.pickle'),'rb') as f:
-        spike_and_trial_details = pickle.load(f)
-    
-    pdb.set_trace()
+    base_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Biogen\output\'
+    for sess in os.listdir(base_loc):
+        loc = os.path.join(base_loc,sess)  
+        spike_and_trial_details = load_spike_and_trial_details_plexon(loc)
+        with open(os.path.join(base_loc,sess,'spike_and_trials.pickle'),'wb') as f:
+            pickle.dump(spike_and_trial_details,f)
