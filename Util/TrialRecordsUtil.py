@@ -6,10 +6,11 @@ import os
 import importlib.machinery
 import types
 import pickle
+import multiprocessing as mp
 
 np64 = np.float64
-
-
+base_loc = '/camhpc/home/bsriram/data_biogen1'
+result_save_loc = '/camhpc/home/bsriram'
 def import_module(name,file):
     loader = importlib.machinery.SourceFileLoader(name,file)
     mod = types.ModuleType(loader.name)
@@ -72,9 +73,6 @@ def get_channel_events_plexon(trial_times,frame_times,good_tnums,trial_data):
                  ('end_time',end_time),\
                  ('ttl_events',ttl_events)])
     return events
-
-    
-    
     
 def load_trialrecs_to_dict_plexon(loc):
     file = [f for f in os.listdir(loc) if f.startswith('trialRecords') and f.endswith('session_record')]
@@ -407,15 +405,40 @@ def get_channel_events(loc,events):
         
 def load_spikerecs_to_dict_OE(loc):
     CDMod = import_module('ClusterDetails','C:\\Users\\bsriram\\Desktop\\Code\\V1PaperAnalysis\\Util\\ClusterDetails.py')
+    # CDMod = import_module('ClusterDetails','/camhpc/home/bsriram/v1paper/v1-paper-analysis/Util/ClusterDetails.py')
+
     spike_details = CDMod.get_cluster_details(loc)
     return spike_details
 
 load_spikerecs_to_dict_plexon = load_spikerecs_to_dict_OE
 
+
+def make_spike_and_trials_pickle(loc):
+    spike_and_trial_details = load_spike_and_trial_details_plexon(loc)
+    with open(os.path.join(loc,'spike_and_trials.pickle'),'wb') as f:
+        pickle.dump(spike_and_trial_details,f)
+    return loc
+    
+def collect_result(result):
+    print('DONE '+result)
+    with open(os.path.join(result_save_loc,'FinishedSession.txt'),'a') as f:
+        f.write(result+'\n')
+
+def handle_error(er):
+    print(er)
+    
 if __name__=='__main__':
-    base_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Biogen\output\'
-    for sess in os.listdir(base_loc):
-        loc = os.path.join(base_loc,sess)  
-        spike_and_trial_details = load_spike_and_trial_details_plexon(loc)
-        with open(os.path.join(base_loc,sess,'spike_and_trials.pickle'),'wb') as f:
-            pickle.dump(spike_and_trial_details,f)
+    #pool = mp.Pool(20)
+    
+    # collated = []
+    # for sess in os.listdir(base_loc):
+        # loc = os.path.join(base_loc,sess)
+        # collated.append(loc)
+        
+    # for job in collated:
+        # pool.apply_async(make_spike_and_trials_pickle,args=(job),callback=collect_result, error_callback=handle_error)
+    jobs = ['b8_02182019','b8_02192019','g2_2_01312019','g2_2_02012019','g2_2_02192019','g2_2_02282019','g2_4_02252019','g2_4_02282019']
+    base_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Biogen\output'
+    for job in jobs:
+        loc = make_spike_and_trials_pickle(os.path.join(base_loc,job))
+        print(loc)

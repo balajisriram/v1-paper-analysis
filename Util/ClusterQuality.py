@@ -49,31 +49,34 @@ def cluster_quality_core(fet_this, fet_other):
     assert n_fet == fet_other.shape[1], "num features dont match"
 
     cov_this_inv = numpy.linalg.inv(numpy.cov(fet_this, rowvar=False))
+    try:
 
-    if n_other > n_this and n_this > n_fet:
-        md = numpy.zeros(n_other)
-        md_self = numpy.zeros(n_this)
-        mean_feath_this = numpy.mean(fet_this,axis=0)
-        for ii in range(0, n_other):
-            md[ii] = numpy.matmul(numpy.matmul(fet_other[ii, :]-mean_feath_this, cov_this_inv), fet_other[ii, :]-mean_feath_this)
+        if n_other > n_this and n_this > n_fet:
+            md = numpy.zeros(n_other)
+            md_self = numpy.zeros(n_this)
+            mean_feath_this = numpy.mean(fet_this,axis=0)
+            for ii in range(0, n_other):
+                md[ii] = numpy.matmul(numpy.matmul(fet_other[ii, :]-mean_feath_this, cov_this_inv), fet_other[ii, :]-mean_feath_this)
 
-        for ii in range(0, n_this):
-            md_self[ii] = numpy.matmul(numpy.matmul(fet_this[ii, :]-mean_feath_this, cov_this_inv), fet_this[ii, :]-mean_feath_this)
+            for ii in range(0, n_this):
+                md_self[ii] = numpy.matmul(numpy.matmul(fet_this[ii, :]-mean_feath_this, cov_this_inv), fet_this[ii, :]-mean_feath_this)
 
-        md = numpy.sort(md)
-        md_self = numpy.sort(md_self)
+            md = numpy.sort(md)
+            md_self = numpy.sort(md_self)
 
-        unit_quality = md[n_this - 1]
-        contamination_rate = 1 - (tipping_point(md_self, md) / numpy.size(md_self))
-        #print(tipping_point(md_self, md))
-    else:
+            unit_quality = md[n_this - 1]
+            contamination_rate = 1 - (tipping_point(md_self, md) / numpy.size(md_self))
+            why_failed = 'n/a'
+        else:
+            unit_quality = 0
+            contamination_rate = None
+            why_failed = 'nominal'
+    except:
         unit_quality = 0
         contamination_rate = None
-    # except:
-        # unit_quality = 0
-        # contamination_rate = None
+        why_failed = 'other'
 
-    return unit_quality, contamination_rate
+    return unit_quality, contamination_rate,why_failed
 
 
 def tipping_point(x, y):

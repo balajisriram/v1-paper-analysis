@@ -10,6 +10,7 @@ import types
 import pdb
 
 loader = importlib.machinery.SourceFileLoader('ClusterQuality',r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\Util\ClusterQuality.py')
+# loader = importlib.machinery.SourceFileLoader('ClusterQuality','/camhpc/home/bsriram/v1paper/v1-paper-analysis/Util/ClusterQuality.py')
 CQMod = types.ModuleType(loader.name)
 loader.exec_module(CQMod)
 
@@ -87,7 +88,11 @@ def get_cluster_details(folder):
         fet = numpy.squeeze(fet_masks[:,:,0])
         mask = numpy.squeeze(fet_masks[:,:,1])
         fet_N = 12
-        unique_clu, clu_quality, cont_rate = CQMod.cluster_quality_all(clu, fet, mask, fet_N)
+        try:
+            unique_clu, clu_quality, cont_rate = CQMod.cluster_quality_all(clu, fet, mask, fet_N)
+            quality_success = True
+        except:
+            quality_success = False
         print("Finished getting quality for shank")
         
         for clust_num in cluster_ids:
@@ -116,8 +121,12 @@ def get_cluster_details(folder):
             
             unit["x_loc"] = kwik_model.channel_positions[max_ch,0]
             unit["y_loc"] = kwik_model.channel_positions[max_ch,1]
-            unit["quality"] = clu_quality[numpy.argwhere(unique_clu==clust_num)]
-            unit["contamination_rate"] =cont_rate[numpy.argwhere(unique_clu==clust_num)]            
+            if quality_success:
+                unit["quality"] = clu_quality[numpy.argwhere(unique_clu==clust_num)]
+                unit["contamination_rate"] =cont_rate[numpy.argwhere(unique_clu==clust_num)]            
+            else:
+                unit["quality"] = numpy.nan
+                unit["contamination_rate"] = numpy.nan
                 
             plot = False
             if plot:
