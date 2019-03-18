@@ -5,7 +5,7 @@ import os
 import pdb
 import scipy
 import shutil
-import v1-paper-analysis 
+    # import v1-paper-analysis 
 
 def import_module(name,file):
     loader = importlib.machinery.SourceFileLoader(name,file)
@@ -29,6 +29,9 @@ for sess in os.listdir(base_loc):
     #if not (('bas070' in sess) or ('bas072' in sess) or ('bas074' in sess) or ('bas079' in sess)): 
     #    continue
     #else:
+    if not sess.startswith('m311'):
+        print('not running for {0}'.format(sess))
+        continue
     print("Running for ", sess)    
     tR_file = [f for f in os.listdir(os.path.join(base_loc,sess)) if f.startswith('trialRecords')] 
     print(sess,":",tR_file)
@@ -61,7 +64,7 @@ for sess in os.listdir(base_loc):
     else:
         print('DAT file found: ',DATFile)
         
-    spike_and_trial_details = TRUtil.load_spike_and_trial_details(full_loc)
+    spike_and_trial_details = TRUtil.load_spike_and_trial_details_OE(full_loc)
     pickle_filename = os.path.join(full_loc,'spike_and_trials.pickle')
     print("Saving pickle to file name ::",pickle_filename)
     with open(pickle_filename,'wb') as f:

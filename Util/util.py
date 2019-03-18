@@ -126,21 +126,19 @@ def get_base_depth(sess,type='OE'):
         )
         return depth_by_session[sess]
 
-def get_subject_from_session(sess):
-    splits = sess.split('_')
-    return splits[0]
-
 def get_session_date(sess,type='OE'):
     splits = sess.split('_')
     if type=='OE':
         date_time = splits[1]+'_'+splits[2]
         return datetime.strptime(date_time,"%Y-%m-%d_%H-%M-%S")
     elif type=='plexon':
-        date_time - splits[1]
-        return datetime.strptime(date_time,"%m%d%Y")
+        date_time = splits[-1]
+        try:dt_obj = datetime.strptime(date_time,"%m%d%Y")
+        except:print(sess)        
+        return 
     
-def get_unit_depth(sess,y_loc):
-    return(get_base_depth(sess)-y_loc)
+def get_unit_depth(sess,y_loc,type='OE'):
+    return(get_base_depth(sess,type=type)-y_loc)
 
 def get_best_waveform(m_waveform):
     idx = np.unravel_index(np.argmax(m_waveform),m_waveform.shape)
@@ -149,31 +147,17 @@ def get_best_waveform(m_waveform):
 def get_subject_from_session(sess):
     splits = sess.split('_')
     return splits[0]
-    
-def get_short_response_stepname(sess):
-    subj = get_subject_from_session(sess)
-    if subj in ['bas072','bas074','m284']:
-        return ['gratings_LED'],[[3,6,12]], [[0,0.15,1.]]
-    elif subj in ['bas077','bas078','bas079','bas080','bas081a']:
-        return  ['gratings_NOLED','gratings_baseLine'],[[1,3,6,12,30],[1,3,6,12,30]],[[0.15,1],[0]]
-    elif subj in ['bas070']:
-        if sess in ['bas070_2015-08-05_12-31-50','bas070_2015-08-06_12-09-26','bas070_2015-08-11_12-51-37']:
-            return ['gratings'], [[1,2,3,6,12]], [[0.15,1.]]
-        elif sess in ['bas070_2015-09-22_12-30-10','bas070_2015-09-23_15-23-36','bas070_2015-09-24_15-47-24','bas070_2015-09-25_14-18-57','bas070_2015-09-28_12-24-33','bas070_2015-09-29_14-51-50','bas070_2015-09-30_13-22-42','bas070_2015-10-01_11-27-45','bas070_2015-10-02_11-46-50']:
-            return ['gratings_LED'],[[3,6,12]], [[0,0.15,1.]]
+ 
+## FRAME AND LED CHANS 
+def get_frame_channel(sess,type='OE'):
+    if type=='OE':
+        if sess in ['bas080_2017-06-07_16-36-59','bas080_2017-06-08_16-39-59','bas081a_2017-06-23_12-55-28','bas081a_2017-06-24_11-57-43','bas081a_2017-06-24_12-55-51','bas081a_2017-06-25_12-44-45','bas081b_2017-07-28_20-31-03','m311_2017-07-31_16-15-43','m311_2017-07-31_17-08-20','m311_2017-08-01_12-05-12','m311_2017-08-01_13-08-00','m325_2017-08-10_13-14-51','m325_2017-08-10_14-21-22','m317_2017-08-24_15-52-35',
+        'm317_2017-08-24_16-48-34','m317_2017-08-25_14-21-08','m318_2017-08-26_18-14-22','m318_2017-08-26_19-28-43']:
+            return 0,0
         else:
-            return ['gratings_LED'],[[1,2,3,6,12]], [[0.15,1.]]
-    elif subj in ['bas081b']:
-        return ['ShortDurationOR'],[[3,6,9,12,30]],[[0.15,1]]
-    elif subj in ['m317','m311','m318','m325']:
-        return ['ShortDurationOR'],[[3,6,9,12,30]],[[0.15,1]]
-  
-def get_frame_channel(sess):
-    if sess in ['bas080_2017-06-07_16-36-59','bas080_2017-06-08_16-39-59','bas081a_2017-06-23_12-55-28','bas081a_2017-06-24_11-57-43','bas081a_2017-06-24_12-55-51','bas081a_2017-06-25_12-44-45','bas081b_2017-07-28_20-31-03','m311_2017-07-31_16-15-43','m311_2017-07-31_17-08-20','m311_2017-08-01_12-05-12','m311_2017-08-01_13-08-00','m325_2017-08-10_13-14-51','m325_2017-08-10_14-21-22','m317_2017-08-24_15-52-35',
-    'm317_2017-08-24_16-48-34','m317_2017-08-25_14-21-08','m318_2017-08-26_18-14-22','m318_2017-08-26_19-28-43']:
-        return 0,0
+            return 1,2
     else:
-        return 1,2
+        return None,None
         
 def get_LED_channel(sess):
     if sess in ['bas081b_2017-07-28_20-31-03','m311_2017-07-31_16-15-43','m311_2017-07-31_17-08-20','m311_2017-08-01_12-05-12','m311_2017-08-01_13-08-00','m325_2017-08-10_13-14-51','m325_2017-08-10_14-21-22']:
@@ -462,6 +446,302 @@ def plot_firing_rate(unit, loc, record, ax=None):
         # ax.plot(times,spike_rate,'k')
     return record
         
+def plot_unit(fig_ref, unit, loc, this_neuron_record):
+    ax1 = plt.subplot2grid((5,3),(0,0),colspan=2)
+    this_neuron_record = plot_ISI(unit, ax1, this_neuron_record)
+    
+    ax2 = plt.subplot2grid((5,3),(0,2),colspan=1)
+    this_neuron_record = plot_unit_waveform(unit, ax2, this_neuron_record)
+    
+    ax3 = plt.subplot2grid((5,3),(1,0),colspan=2)
+    this_neuron_record = plot_unit_stability(unit, loc, this_neuron_record, ax=ax3)
+    
+    ax4 = plt.subplot2grid((5,3),(1,2),colspan=1)
+    this_neuron_record = plot_unit_quality(unit, loc, this_neuron_record, ax=ax4)
+    
+    ax5 = plt.subplot2grid((5,3),(2,0),colspan=2)
+    this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
+    
+    ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
+    this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
+    return this_neuron_record    
+ 
+## waveforms
+def get_waveform_details(unit,type='OE'):
+    def get_peak_trough(wvform, t):
+        # find the min value and index of interp functionm
+        wvform_min = np.min(wvform)
+        half_min = wvform_min/2
+        wvform_min_idx = np.argmin(wvform)
+        wvform_max_idx = np.argmax(wvform[wvform_min_idx:])+ wvform_min_idx
+        
+        p2t_ratio = -wvform[wvform_max_idx]/wvform[wvform_min_idx]
+        p2t_time = t[wvform_max_idx]-t[wvform_min_idx]
+        
+        return p2t_ratio,p2t_time
+        
+    def get_fwhm(wvform,t_wvform):
+        # invert if positive waveform
+        if abs(np.min(wvform))<np.max(wvform):
+            wvform = -wvform
+
+        wvform_min = np.min(wvform)
+        half_min = wvform_min/2
+        wvform_min_idx = np.argmin(wvform)
+        
+        idx_left = 0
+        for i in range(wvform_min_idx,-1,-1):
+            if wvform[i]>half_min:
+               idx_left = i
+               break
+        idx_right = len(t_wvform)-1
+        for i in range(wvform_min_idx,len(t_wvform)-1):
+            if wvform[i]>half_min:
+                idx_right = i
+                break
+        spike_width = t_wvform[idx_right]-t_wvform[idx_left]
+        return spike_width
+    
+    mu_all = unit['mean_waveform']
+    std_all = unit['std_waveform']
+    waveform_size = mu_all.shape[0]
+    num_chans = mu_all.shape[1]
+    
+    # get the largest deviation in the negative direction
+    max_ind = np.unravel_index(np.argmin(mu_all),mu_all.shape)
+    max_chan = max_ind[1]
+    
+    mu_max = mu_all[:,max_chan]
+    sd_max = std_all[:,max_chan]
+    
+    if type=='OE':sample_rate=30000.
+    else: sample_rate=40000.
+    
+    interp_fn_m = interpolate.interp1d(np.linspace(0,(waveform_size-1)/sample_rate,waveform_size),mu_max,kind='cubic')
+    interp_fn_sd = interpolate.interp1d(np.linspace(0,(waveform_size-1)/sample_rate,waveform_size),sd_max,kind='cubic')
+    
+    interp_t = np.linspace(0,(waveform_size-1)/sample_rate,waveform_size*125)
+    interp_m = interp_fn_m(interp_t)
+    interp_sd = interp_fn_sd(interp_t)
+    
+    max_idx = np.argmin(interp_m)
+    peak_snr_wvform = interp_m[max_idx]/interp_sd[max_idx]
+    
+    fwhm = get_fwhm(interp_m,interp_t)
+    fwhm = 1000.*fwhm # in ms
+    p2t_ratio,p2t_time = get_peak_trough(interp_m,interp_t)
+    p2t_time = 1000.* p2t_time # in ms
+    
+    return interp_t,interp_m,interp_sd,peak_snr_wvform,fwhm,p2t_ratio,p2t_time
+
+def flatten_wvform_dict(inp):
+    
+    out = []
+    for unit in inp:
+        temp = {}
+        temp['unit_id'] = unit['unit_id']
+        temp['wv_snr'] = unit[('waveform', 'snr')]
+        temp['wv_mu'] = unit[('waveform', 'mu')]
+        temp['wv_sd'] = unit[('waveform', 'sd')]
+        temp['wv_p2tr'] = unit[('waveform', 'p2t_ratio')]
+        temp['wv_p2tt'] = unit[('waveform', 'p2t_time')]
+        temp['wv_fwhm'] = unit[('waveform', 'fwhm')]
+        out.append(temp)
+    return out
+        
+## OR tuning    
+def get_or_tuning_details(sess, trial_records, unit, type='OE'):
+
+    def get_orientation_tuning_stepname(sess,type='OE'):
+        subj = get_subject_from_session(sess)
+        if type=='OE':
+            if subj in ['bas072','bas074','m284']:
+                return 'gratings',500
+            elif subj in ['bas077','bas078','bas079','bas080','bas081a']:
+                return 'gratings',2000
+            elif subj in ['bas070']:
+                if sess in ['bas070_2015-08-05_12-31-50','bas070_2015-08-06_12-09-26','bas070_2015-08-11_12-51-37','bas070_2015-08-13_11-56-14_1']:
+                    return None, None
+                else:
+                    return 'gratings',500
+            elif subj in ['bas081b']:
+                return 'LongDurationOR_LED',2000
+            elif subj in ['m317','m311','m318','m325']:
+                return 'OrSweep',2000
+        else:
+            if sess not in ['b8_02022019','g2_2_01312019','g2_2_02012019','g2_2_02022019']:
+                return 'or_tuning_ts_8_ors_drift_2Hz_2s_fullC',2000
+            else: return None,None
+          
+    def get_OSI(orn,m,type='OE'):
+        m = np.asarray(m)
+        if type=='OE':orn = np.asarray(orn)
+        else:orn = np.deg2rad(orn)
+        
+        assert np.size(m)==np.size(orn)
+        
+        # ensure ascending orientation
+        order = np.argsort(orn)
+        orn = orn[order]
+        m = m[order]
+        
+        # get or with highest mean firing rate
+        try:which_max = np.argmax(m)
+        except:pdb.set_trace()
+        or_max = orn[which_max]
+        if (which_max>(np.size(m)/2)):
+            or_min = or_max-(np.pi/2)
+        else:
+            or_min = or_max+(np.pi/2)
+        which_min = np.argmin(np.abs((orn-or_min)))
+        
+        m_max = m[which_max]
+        m_min = m[which_min]
+        np.seterr(all='raise')
+        try:
+            osi = ((m_max-m_min)/(m_max+m_min))
+        except FloatingPointError as e:
+            print(e)
+            osi = None
+        except error as e:
+            print(e)
+            pdb.set_trace()
+        return osi,or_max
+        
+    def get_vector_sum(orn,m,type='OE'):
+        m = np.asarray(m)
+        if type=='OE':orn = np.asarray(orn)
+        else:orn = np.deg2rad(orn)
+        orn = 2*(-orn + (np.pi/2)) 
+        
+        assert np.size(m)==np.size(orn)
+        
+        complex_sum = np.dot(m,np.exp(1j*orn))    
+        strength = np.abs(complex_sum)
+        angle = np.angle(complex_sum)
+        if angle<0:
+            angle = 2*np.pi+angle
+        angle = np.pi/2-angle/2
+        
+        if angle > np.pi/2:
+            angle = np.pi-angle
+        elif angle<-np.pi/2:
+            angle = np.pi+angle
+        return strength,angle
+    
+    def get_or_tuning_dict(spike_raster,trial_numbers,orientations):
+        or_tuning = {'orientation':[],'m_rate':[],'std_rate':[],'n_trials':[]}
+        spikes_found = False
+        for orn in np.unique(orientations):
+            # find those trials and find mean and std 
+            trs = trial_numbers[orientations==orn]
+            spike_nums_that_or = [np.size(spike_raster[tr]) for tr in trs]
+            sp_mean_that_or = np.mean(spike_nums_that_or)
+            if sp_mean_that_or != 0:
+                spikes_found = True
+            sp_std_that_or = np.std(spike_nums_that_or)
+            or_tuning['orientation'].append(orn)
+            or_tuning['n_trials'].append(np.size(trs))
+            or_tuning['m_rate'].append(sp_mean_that_or)
+            or_tuning['std_rate'].append(sp_std_that_or)
+        if not spikes_found:
+            print('Non spikes in orientation tuning for that unit')
+        return(or_tuning, spikes_found)
+    
+    def get_start_and_end_time_by_trial(trial_numbers,ttl_events,framechan_deets,type='OE'):
+        if type=='OE':
+            
+            frame_chan,shift = framechan_deets
+            frame_start_time = []
+            frame_end_time = []    
+            for trial_number in trial_numbers:
+                event_for_trial = ttl_events[trial_number]
+                if shift:
+                    frame_start_time.append(event_for_trial[framechan]['rising'][1])
+                    frame_end_time.append(event_for_trial[framechan]['rising'][-2])
+                else:
+                    frame_start_time.append(event_for_trial[framechan]['rising'][0])
+                    frame_end_time.append(event_for_trial[framechan]['rising'][-1])
+            frame_start_time = np.asarray(frame_start_time)/30000.
+            frame_end_time = np.asarray(frame_end_time)/30000.
+            frame_end_time = frame_end_time+1/60. # goes on till the end of the last frame...
+        else:
+            frame_start_time = []
+            frame_end_time = []    
+            for trial_number in trial_numbers:
+                event_for_trial = ttl_events[trial_number]
+                frame_start_time.append(event_for_trial['frame'][0])
+                frame_end_time.append(event_for_trial['frame'][-1])
+            frame_start_time = np.asarray(frame_start_time)
+            frame_end_time = np.asarray(frame_end_time)
+            frame_end_time = frame_end_time+1/60. # goes on till the end of the last frame...
+        return frame_start_time,frame_end_time
+        
+    # get_or_tuning
+    unit_details = {}
+    failed_why = None
+
+    try:
+        stepname,durations = get_orientation_tuning_stepname(sess,type=type)
+    except:
+        print('failed to get stepname')
+        stepname = None
+    framechan,shift = get_frame_channel(sess,type=type)
+    
+    if not stepname: 
+        failed_why = 'no_or_tuning_stepname'
+        return unit_details, failed_why
+    
+    # get the data and filter for stepname
+    trial_numbers = np.asarray(trial_records['trial_number'])
+    step_names = np.asarray(trial_records['step_name'])
+    contrasts = np.asarray(trial_records['contrast'])
+    max_durations = np.asarray(trial_records['max_duration'])
+    phases = np.asarray(trial_records['phase'])
+    orientations = np.asarray(trial_records['orientation'])    
+    which_step = step_names==stepname
+    trial_numbers = trial_numbers[which_step]
+    step_names = step_names[which_step]
+    contrasts = contrasts[which_step]
+    max_durations = max_durations[which_step]
+    phases = phases[which_step]
+    orientations = orientations[which_step]
+    
+    # get the spike raster
+    frame_start_time,frame_end_time = get_start_and_end_time_by_trial(trial_numbers, trial_records['events']['ttl_events'], (framechan,shift), type=type)    
+    spike_time = np.squeeze(np.asarray(unit['spike_time']))
+    spike_raster = {}
+    for ii,trial_number in enumerate(trial_numbers):
+        try:spike_raster[trial_number] = spike_time[np.bitwise_and(spike_time>frame_start_time[ii],spike_time<frame_end_time[ii])]-frame_start_time[ii]
+        except:pdb.set_trace()
+    or_tuning, spikes_found = get_or_tuning_dict(spike_raster,trial_numbers,orientations)
+    
+    if spikes_found:
+        unit_details['or_tuning'] = or_tuning
+        unit_details['osi'] = get_OSI(or_tuning['orientation'],or_tuning['m_rate'],type=type)
+        unit_details['vector_sum'] = get_vector_sum(or_tuning['orientation'],or_tuning['m_rate'],type=type)
+        # jack_knife
+        unit_details['trial_jackknife'] = []
+        unit_details['osi_jackknife'] = []
+        unit_details['vector_sum_jackknife'] = []
+        for key in spike_raster:
+            # prep the copies
+            spike_raster_jack_knife = spike_raster.copy()
+            which_tr = trial_numbers==key
+            idx = np.where(np.logical_not(which_tr))[0]
+            trial_number_jack_knife = trial_numbers[idx]
+            orientation_jack_knife = orientations[idx]
+            del spike_raster_jack_knife[key]
+            
+            or_tuning_jack_knife,spikes_found_jackknife=get_or_tuning_dict(spike_raster_jack_knife,trial_number_jack_knife,orientation_jack_knife)
+            unit_details['trial_jackknife'].append(key)
+            unit_details['osi_jackknife'].append(get_OSI(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
+            unit_details['vector_sum_jackknife'].append(get_vector_sum(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
+    else:
+        unit_details = {}
+        failed_why = 'no_spikes'
+    return unit_details, failed_why
+
 def plot_or_tuning(unit, loc, record, ax=None):
     tuning_data,failed_why = get_or_tuning(os.path.dirname(loc), os.path.basename(loc),unit)
     if not failed_why:
@@ -535,34 +815,284 @@ def plot_or_tuning(unit, loc, record, ax=None):
             # ax.text(0,0,failed_why,fontsize=6,horizontalalignment='center',verticalalignment='center')
     return record
 
-def plot_unit(fig_ref, unit, loc, this_neuron_record):
-    ax1 = plt.subplot2grid((5,3),(0,0),colspan=2)
-    this_neuron_record = plot_ISI(unit, ax1, this_neuron_record)
-    
-    ax2 = plt.subplot2grid((5,3),(0,2),colspan=1)
-    this_neuron_record = plot_unit_waveform(unit, ax2, this_neuron_record)
-    
-    ax3 = plt.subplot2grid((5,3),(1,0),colspan=2)
-    this_neuron_record = plot_unit_stability(unit, loc, this_neuron_record, ax=ax3)
-    
-    ax4 = plt.subplot2grid((5,3),(1,2),colspan=1)
-    this_neuron_record = plot_unit_quality(unit, loc, this_neuron_record, ax=ax4)
-    
-    ax5 = plt.subplot2grid((5,3),(2,0),colspan=2)
-    this_neuron_record = plot_firing_rate(unit, loc, this_neuron_record, ax=ax5)
-    
-    ax6 = plt.subplot2grid((5,3),(2,2),colspan=2,polar=True)
-    this_neuron_record = plot_or_tuning(unit, loc, this_neuron_record, ax=ax6)
-    return this_neuron_record    
+def flatten_ortune_dict(inp):
+    out = []
+    for unit in inp:
+        temp = {}
+        temp['unit_id'] = unit['unit_id']
+        if unit['failed_why'] in ['no_or_tuning_stepname','no_spikes']:
+            temp['has_or_tuning'] = False
+            temp['osi'] = np.nan
+            temp['osi_ang'] = np.nan
+            temp['vecsum_amp'] = np.nan
+            temp['vecsum_ang'] = np.nan
+            temp['osi_jk_mu'] = np.nan
+            temp['osi_jk_sd'] = np.nan
+            temp['osi_jk_n'] = np.nan
+            temp['vecsum_jk_mu'] = np.nan
+            temp['vecsum_jk_sd'] = np.nan
+            temp['vecsum_jk_n'] = np.nan
+        elif not unit['failed_why']:
+            try:
+                temp['has_or_tuning'] = True
+                temp['osi'] = unit['or_tuning_details']['osi'][0]
+                temp['osi_ang'] = unit['or_tuning_details']['osi'][1]
+                temp['vecsum_amp'] = unit['or_tuning_details']['vector_sum'][0]
+                temp['vecsum_ang'] = unit['or_tuning_details']['vector_sum'][1]
+                osi_jk_vals = np.array([jk[0] for jk in unit['or_tuning_details']['osi_jackknife']],dtype=np.float)
+                temp['osi_jk_mu'] = np.nanmean(osi_jk_vals)
+                temp['osi_jk_sd'] = np.nanstd(osi_jk_vals)
+                temp['osi_jk_n'] = np.sum(~np.isnan(osi_jk_vals))
+                vecsum_jk_vals = np.array([jk[1] for jk in unit['or_tuning_details']['vector_sum_jackknife']],dtype=np.float)
+                temp['vecsum_jk_mu'] = np.nanmean(vecsum_jk_vals)
+                temp['vecsum_jk_sd'] = np.nanstd(vecsum_jk_vals)
+                temp['vecsum_jk_n'] = np.sum(~np.isnan(vecsum_jk_vals))
+            except Exception as e:
+                print(e)
+                pdb.set_trace()
+        else:
+            pdb.set_trace()
+        
+        out.append(temp)
+    return out
+## Long_dur_decoding
+def get_longdur_tuning_details(sess, trial_records, unit, type='OE'):
 
+    def get_long_dur_stepname(sess,type='OE'):
+        subj = get_subject_from_session(sess)
+        if type=='OE':
+            if subj in ['bas080','bas081a']: return 'gratings_LongDuration'
+            elif subj in ['bas081b','m311','m325']: return 'LongDurationOR_LED'
+        else:
+            return 'or_decoding_pm45deg_8phases_2Hz_2s_full_and_lo_C'
+    
+    def get_start_and_end_time_by_trial(trial_numbers,ttl_events,framechan_deets,type='OE'):
+        if type=='OE':
+            frame_chan,shift = framechan_deets
+            frame_start_time = []
+            frame_end_time = []    
+            for trial_number in trial_numbers:
+                event_for_trial = ttl_events[trial_number]
+                if shift:
+                    frame_start_time.append(event_for_trial[framechan]['rising'][1])
+                    frame_end_time.append(event_for_trial[framechan]['rising'][-2])
+                else:
+                    frame_start_time.append(event_for_trial[framechan]['rising'][0])
+                    frame_end_time.append(event_for_trial[framechan]['rising'][-1])
+            frame_start_time = np.asarray(frame_start_time)/30000.
+            frame_end_time = np.asarray(frame_end_time)/30000.
+            frame_end_time = frame_end_time+1/60. # goes on till the end of the last frame...
+        else:
+            frame_start_time = []
+            frame_end_time = []    
+            for trial_number in trial_numbers:
+                event_for_trial = ttl_events[trial_number]
+                frame_start_time.append(event_for_trial['frame'][0])
+                frame_end_time.append(event_for_trial['frame'][-1])
+            frame_start_time = np.asarray(frame_start_time)
+            frame_end_time = np.asarray(frame_end_time)
+            frame_end_time = frame_end_time+1/60. # goes on till the end of the last frame...
+        return frame_start_time,frame_end_time
+    
+    # get_or_tuning
+    unit_details = {}
+    failed_why = 'n/a'
+    stepname = get_long_dur_stepname(sess,type=type)
+    if not stepname: 
+        failed_why = 'no_longdur_decoding_stepname'
+        return unit_details, failed_why
+    framechan,shift = get_frame_channel(sess,type=type)
+    
+    # get the data and filter for stepname
+    trial_numbers = np.asarray(trial_records['trial_number'])
+    step_names = np.asarray(trial_records['step_name'])
+    contrasts = np.asarray(trial_records['contrast'])
+    max_durations = np.asarray(trial_records['max_duration'])
+    phases = np.asarray(trial_records['phase'])
+    orientations = np.asarray(trial_records['orientation'])    
+    which_step = step_names==stepname
+    trial_numbers = trial_numbers[which_step]
+    step_names = step_names[which_step]
+    contrasts = contrasts[which_step]
+    max_durations = max_durations[which_step]
+    phases = phases[which_step]
+    orientations = orientations[which_step]
+    
+    # get the spike raster
+    frame_start_time,frame_end_time = get_start_and_end_time_by_trial(trial_numbers, trial_records['events']['ttl_events'],(framechan,shift),type=type)    
+    spike_time = np.squeeze(np.asarray(unit['spike_time']))
+    spike_raster = {}
+    for ii,trial_number in enumerate(trial_numbers):
+        try:spike_raster[trial_number] = spike_time[np.bitwise_and(spike_time>frame_start_time[ii],spike_time<frame_end_time[ii])]-frame_start_time[ii]
+        except:pdb.set_trace()
+        
+    unit_details['orientations'] = orientations
+    unit_details['phases'] = phases
+    unit_details['max_durations'] = max_durations
+    unit_details['contrasts'] = contrasts
+    unit_details['trial_numbers'] = trial_numbers
+    unit_details['spike_raster'] = spike_raster
+    
+    return unit_details,failed_why
+    
+## Short_dur_decoding
+def get_shortdur_tuning_details(sess, trial_records, unit, type='OE'):
+
+    def get_short_response_stepnames(sess,type='OE'):
+        subj = get_subject_from_session(sess)
+        if type=='OE':
+            if subj in ['bas072','bas074','m284']:
+                return ['gratings_LED']
+            elif subj in ['bas077','bas078','bas079','bas080','bas081a']:
+                return  ['gratings_NOLED','gratings_baseLine']
+            elif subj in ['bas070']:
+                if sess in ['bas070_2015-08-05_12-31-50','bas070_2015-08-06_12-09-26','bas070_2015-08-11_12-51-37']:
+                    return ['gratings']
+                elif sess in ['bas070_2015-09-22_12-30-10','bas070_2015-09-23_15-23-36','bas070_2015-09-24_15-47-24','bas070_2015-09-25_14-18-57','bas070_2015-09-28_12-24-33','bas070_2015-09-29_14-51-50','bas070_2015-09-30_13-22-42','bas070_2015-10-01_11-27-45','bas070_2015-10-02_11-46-50']:
+                    return ['gratings_LED']
+                else:
+                    return ['gratings_LED']
+            elif subj in ['bas081b']:
+                return ['ShortDurationOR']
+            elif subj in ['m317','m311','m318','m325']:
+                return ['ShortDurationOR']
+        else:
+            if sess not in ['b8_01312019','b8_02022019','b8_02032019','b8_02042019','g2_2_01312019','g2_2_02012019','g2_2_02022019']: return ['short_duration_pm45deg_8phases']            
+ 
+    def get_start_and_end_time_by_trial(trial_numbers,ttl_events,framechan_deets,type='OE'):
+        if type=='OE':
+            frame_chan,shift = framechan_deets
+            frame_start_time = []
+            frame_end_time = []    
+            for trial_number in trial_numbers:
+                event_for_trial = ttl_events[trial_number]
+                try:
+                    if shift:
+                        frame_start_time.append(event_for_trial[framechan]['rising'][1])
+                        frame_end_time.append(event_for_trial[framechan]['rising'][1]+150000) # all the way to +5 seconds
+                    else:
+                        frame_start_time.append(event_for_trial[framechan]['rising'][0])
+                        frame_end_time.append(event_for_trial[framechan]['rising'][0]+150000) # all the way to +5 seconds
+                except Exception as e: 
+                    print(e)
+                    frame_start_time.append(np.nan)
+                    frame_end_time.append(np.nan)
+            frame_start_time = np.asarray(frame_start_time)/30000.
+            frame_end_time = np.asarray(frame_end_time)/30000.
+        else:
+            frame_start_time = []
+            frame_end_time = []    
+            for trial_number in trial_numbers:
+                event_for_trial = ttl_events[trial_number]
+                frame_start_time.append(event_for_trial['frame'][0])
+                frame_end_time.append(event_for_trial['frame'][0]+5.0) # all the way to +5 seconds
+            frame_start_time = np.asarray(frame_start_time)
+            frame_end_time = np.asarray(frame_end_time)
+        return frame_start_time,frame_end_time
+    
+    # get_short_duration_stepname
+    unit_details = {}
+    failed_why = 'n/a'
+    stepname = get_short_response_stepnames(sess,type=type)
+    if not stepname: 
+        failed_why = 'no_shortdur_decoding_stepname'
+        return unit_details, failed_why
+    framechan,shift = get_frame_channel(sess,type=type)
+    
+    
+    # get the data and filter for stepname
+    trial_numbers = np.asarray(trial_records['trial_number'])
+    step_names = np.asarray(trial_records['step_name'])
+    contrasts = np.asarray(trial_records['contrast'])
+    max_durations = np.asarray(trial_records['max_duration'])
+    phases = np.asarray(trial_records['phase'])
+    orientations = np.asarray(trial_records['orientation']) 
+    # get the step filter    
+    which_step = step_names==stepname[0]
+    for st in stepname:
+        which_step = np.bitwise_or(which_step,step_names==st)
+    trial_numbers = trial_numbers[which_step]
+    step_names = step_names[which_step]
+    contrasts = contrasts[which_step]
+    max_durations = max_durations[which_step]
+    phases = phases[which_step]
+    orientations = orientations[which_step]
+    
+    # get the spike raster
+    frame_start_time,frame_end_time = get_start_and_end_time_by_trial(trial_numbers, trial_records['events']['ttl_events'],(framechan,shift), type=type)    
+    spike_time = np.squeeze(np.asarray(unit['spike_time']))
+    spike_raster = {}
+    assert len(frame_start_time)==len(trial_numbers),'something weird is happenineg'
+    for ii,trial_number in enumerate(trial_numbers):
+        if np.isnan(frame_start_time[ii]): 
+            # print('found a weird trial')
+            spike_raster[trial_number] = np.nan
+            continue
+        try:spike_raster[trial_number] = spike_time[np.bitwise_and(spike_time>(frame_start_time[ii]-0.5),spike_time<frame_end_time[ii])]-frame_start_time[ii]
+        except:pdb.set_trace()
+        
+    unit_details['orientations'] = orientations
+    unit_details['phases'] = phases
+    unit_details['max_durations'] = max_durations
+    unit_details['contrasts'] = contrasts
+    unit_details['trial_numbers'] = trial_numbers
+    unit_details['spike_raster'] = spike_raster
+    return unit_details,failed_why
+    
+## Quality
+def get_unit_quality(unit, model_loc,session_type='OE'):
+    kwik_model = get_model(model_loc,session_type=session_type)
+    
+    kwik_model.channel_group = unit['shank_no']
+    kwik_model.clustering = 'main'
+    spike_time = kwik_model.spike_samples.astype(np.float64)/kwik_model.sample_rate
+    spike_id = kwik_model.spike_ids
+    cluster_id = kwik_model.spike_clusters
+    fet_masks = kwik_model.all_features_masks
+    fet = np.squeeze(fet_masks[:,:,0])
+    
+    that_cluster_idx = np.argwhere(cluster_id==unit['cluster_id'])
+    other_cluster_idx = np.argwhere(cluster_id!=unit['cluster_id'])
+    
+    fet_that = np.squeeze(fet[that_cluster_idx,:])
+    fet_other = np.squeeze(fet[other_cluster_idx,:])
+    
+    uq,cr,failure_mode = cluster_quality_core(fet_that,fet_other)
+
+    return uq,cr,failure_mode
+
+def flatten_unitqual_dict(inp):
+    out = []
+    for unit in inp:
+        temp = {}
+        temp['unit_id'] = unit['unit_id']
+        
+        if unit['failure_reason']=='nominal':
+            temp['has_cluster_quality'] = False
+            temp['contamination_rate'] = np.nan
+            temp['unit_quality'] = np.nan
+        elif unit['failure_reason']=='n/a':
+            temp['has_cluster_quality'] = True
+            temp['contamination_rate'] = unit['contamination_rate']
+            temp['unit_quality'] = unit['unit_quality']
+        else:
+            pdb.set_trace()
+        # elif npt unit['failure_reason']=='nominal':
+            # temp['has_cluster_quality'] = False
+            # temp['contamination_rate'] = np.nan
+            # temp['unit_quality'] = np.nan
+
+        out.append(temp)
+    return out
 ## STUFF
 def get_features(what,base_loc =r'C:\Users\bsriram\Desktop\Data_V1Paper'):
     out = []
     sub_locs = ['DetailsProcessedPhysOnly','DetailsProcessedBehaved','EyeTracked']
-    sub_locs = ['EyeTracked']
+    # sub_locs = ['EyeTracked']
     types = ['OE','OE','plexon']
-    types = ['plexon']
-    for type,sub_loc in zip(types,sub_locs):
+    # types = ['plexon']
+    session_types = ['PhysOnly','Behaved','EyeTracked']
+    for type,session_type,sub_loc in zip(types,session_types,sub_locs):
         for sess in tqdm(os.listdir(os.path.join(base_loc,sub_loc))):
             spike_and_trial_file = [f for f in os.listdir(os.path.join(base_loc,sub_loc,sess)) if f.startswith('spike_and_trials')]
             assert len(spike_and_trial_file)==1, 'too many or too few spike and trials pickle'
@@ -597,275 +1127,391 @@ def get_features(what,base_loc =r'C:\Users\bsriram\Desktop\Data_V1Paper'):
                         temp['contamination_rate'] = cr
                         temp['failure_reason'] = why_failed
                         out.append(temp)
+                    elif what=='manual_quality':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        temp['manual_quality'] = unit['manual_quality']
+                        out.append(temp)
+                    elif what=='or_tuning_details':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        trial_records = sess_data['trial_records']
+                        otd,fw = get_or_tuning_details(sess,trial_records,unit,type)
+                        temp['or_tuning_details'] = otd
+                        temp['failed_why'] = fw
+                        out.append(temp)
+                    elif what=='session_type':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        temp['session_type'] = session_type
+                        out.append(temp)
+                    elif what=='long_dur_decoding_details':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        trial_records = sess_data['trial_records']
+                        lddd,fw = get_longdur_tuning_details(sess,trial_records,unit,type)
+                        temp['long_dur_decoding_details'] = lddd
+                        temp['failed_why'] = fw
+                        out.append(temp)
+                    elif what=='short_dur_decoding_details':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        trial_records = sess_data['trial_records']
+                        sddd,fw = get_shortdur_tuning_details(sess,trial_records,unit,type)
+                        temp['short_dur_decoding_details'] = sddd
+                        temp['failed_why'] = fw
+                        out.append(temp)
+                    elif what=='spike_location_details':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        temp['x_relative'] = unit['x_loc']
+                        temp['y_relative'] = unit['y_loc']
+                        temp['y_absolute'] = get_unit_depth(sess,unit['y_loc'],type=type)
+                        out.append(temp)
+                    elif what=='session_details':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        temp['session'] = sess
+                        temp['session_date'] = get_session_date(sess,type=type)
+                        temp['subject_id'] = get_subject_from_session(sess)
+                        out.append(temp)
+                    elif what=='isi_details':
+                        temp = {}
+                        temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                        spike_train = unit['spike_time']
+                        n_spikes = np.size(spike_train)
+                        isi = np.diff(spike_train, axis=0)
+                        num_violations = np.sum(isi<0.001)
+                        total_time = spike_train[-1]
+                        temp['n_spikes'] = n_spikes
+                        temp['num_isi_violations'] = num_violations
+                        temp['isi_violation_rate'] = num_violations/total_time
+                        temp['isi_violation_fraction'] = num_violations/n_spikes
+                        out.append(temp)
+                        
+                        
     return out
     
-## waveforms
-def get_waveform_details(unit,type='OE'):
-    def get_peak_trough(wvform, t):
-        # find the min value and index of interp functionm
-        wvform_min = np.min(wvform)
-        half_min = wvform_min/2
-        wvform_min_idx = np.argmin(wvform)
-        wvform_max_idx = np.argmax(wvform[wvform_min_idx:])+ wvform_min_idx
+def make_and_merge_dfs():
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\session_types_details.pickle','rb') as f:
+        sess_type = pickle.load(f)
+    sess_type_df = pd.DataFrame(sess_type)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\details_fr.pickle','rb') as f:
+        fr = pickle.load(f)
+    fr_df = pd.DataFrame(fr)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\details_manual_quality.pickle','rb') as f:
+        mq = pickle.load(f)
+    mq_df = pd.DataFrame(mq)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\details_quality.pickle','rb') as f:
+        cq = pickle.load(f)
+    cq = flatten_unitqual_dict(cq)
+    cq_df = pd.DataFrame(cq)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\details_waveform.pickle','rb') as f:
+        wv = pickle.load(f)
+    wv = flatten_wvform_dict(wv)
+    wv_df = pd.DataFrame(wv)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\details_or_tuning.pickle','rb') as f:
+        or_tune = pickle.load(f)
+    or_tune = flatten_ortune_dict(or_tune)
+    or_tune_df = pd.DataFrame(or_tune)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\spike_loc_details.pickle','rb') as f:
+        loc = pickle.load(f)
+    loc_df = pd.DataFrame(loc)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\session_details.pickle','rb') as f:
+        sess_deets = pickle.load(f)
+    sess_deets_df = pd.DataFrame(sess_deets)
+    
+    with open(r'C:\Users\bsriram\Desktop\Code\V1PaperAnalysis\AnalysisRuns\isi_details.pickle','rb') as f:
+        isi_deets = pickle.load(f)
+    isi_deets_df = pd.DataFrame(isi_deets)
+    
+    
+    neuron_df = sess_type_df
+    neuron_df = neuron_df.merge(fr_df)
+    neuron_df = neuron_df.merge(mq_df)
+    neuron_df = neuron_df.merge(cq_df)
+    neuron_df = neuron_df.merge(wv_df)
+    neuron_df = neuron_df.merge(or_tune_df)
+    neuron_df = neuron_df.merge(loc_df)
+    neuron_df = neuron_df.merge(sess_deets_df)
+    neuron_df = neuron_df.merge(isi_deets_df)
+    # neuron_df = neuron_df.set_index('unit_id')
+    neuron_df.to_pickle("AllNeurons.df")
         
-        p2t_ratio = -wvform[wvform_max_idx]/wvform[wvform_min_idx]
-        p2t_time = t[wvform_max_idx]-t[wvform_min_idx]
-        
-        return p2t_ratio,p2t_time
-        
-    def get_fwhm(wvform,t_wvform):
-        # invert if positive waveform
-        if abs(np.min(wvform))<np.max(wvform):
-            wvform = -wvform
+def make_long_dur_session_dfs(base_loc =r'C:\Users\bsriram\Desktop\Data_V1Paper',out_loc=r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\LongDurSessionDFs'):
+    sub_locs = ['DetailsProcessedPhysOnly','DetailsProcessedBehaved','EyeTracked']
+    types = ['OE','OE','plexon']
+    session_types = ['PhysOnly','Behaved','EyeTracked']
+    for type,session_type,sub_loc in zip(types,session_types,sub_locs):
+        for sess in tqdm(os.listdir(os.path.join(base_loc,sub_loc))):
+            subj = get_subject_from_session(sess)
+            out = []
+            spike_and_trial_file = [f for f in os.listdir(os.path.join(base_loc,sub_loc,sess)) if f.startswith('spike_and_trials')]
+            assert len(spike_and_trial_file)==1, 'too many or too few spike and trials pickle'
+            spike_and_trial_file = spike_and_trial_file[0]
+            with open(os.path.join(base_loc,sub_loc,sess,spike_and_trial_file),'rb') as f:
+                sess_data = pickle.load(f)
+            for unit in sess_data['spike_records']['units']:
+                if unit['manual_quality'] in ['good','mua']:
+                    temp = {}
+                    temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                    trial_records = sess_data['trial_records']
+                    lddd,fw = get_longdur_tuning_details(sess,trial_records,unit,type)
+                    temp['long_dur_decoding_details'] = lddd
+                    temp['failed_why'] = fw
+                    out.append(temp)
+            if out:
+                reason, out = flatten_long_dur_dict(out,type=type)
+                if reason=='has_data':
+                    df = pd.DataFrame(out)
+                    df_name = sess+'.df'
+                    df.to_pickle(os.path.join(out_loc,df_name))
+    return out
+    
+def make_short_dur_session_dfs(base_loc =r'C:\Users\bsriram\Desktop\Data_V1Paper',out_loc=r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'):
+    sub_locs = ['DetailsProcessedPhysOnly','DetailsProcessedBehaved','EyeTracked']
+    types = ['OE','OE','plexon']
+    session_types = ['PhysOnly','Behaved','EyeTracked']
+    for type,session_type,sub_loc in zip(types,session_types,sub_locs):
+        for sess in tqdm(os.listdir(os.path.join(base_loc,sub_loc))):
+            subj = get_subject_from_session(sess)
+            out = []
+            spike_and_trial_file = [f for f in os.listdir(os.path.join(base_loc,sub_loc,sess)) if f.startswith('spike_and_trials')]
+            assert len(spike_and_trial_file)==1, 'too many or too few spike and trials pickle'
+            spike_and_trial_file = spike_and_trial_file[0]
+            with open(os.path.join(base_loc,sub_loc,sess,spike_and_trial_file),'rb') as f:
+                sess_data = pickle.load(f)
+            for unit in sess_data['spike_records']['units']:
+                if unit['manual_quality'] in ['good','mua']:
+                    temp = {}
+                    temp['unit_id'] = get_unit_id(sess,unit['shank_no'],unit['cluster_id'])
+                    trial_records = sess_data['trial_records']
+                    sddd,fw = get_shortdur_tuning_details(sess,trial_records,unit,type)
+                    temp['short_dur_decoding_details'] = sddd
+                    temp['failed_why'] = fw
+                    out.append(temp)
+            if out:
+                reason, out = flatten_short_dur_dict(out,type=type)
+                if reason=='has_data':
+                    df = pd.DataFrame(out)
+                    df_name = sess+'.df'
+                    df.to_pickle(os.path.join(out_loc,df_name))
+    return out
 
-        wvform_min = np.min(wvform)
-        half_min = wvform_min/2
-        wvform_min_idx = np.argmin(wvform)
-        
-        idx_left = 0
-        for i in range(wvform_min_idx,-1,-1):
-            if wvform[i]>half_min:
-               idx_left = i
-               break
-        idx_right = len(t_wvform)-1
-        for i in range(wvform_min_idx,len(t_wvform)-1):
-            if wvform[i]>half_min:
-                idx_right = i
-                break
-        spike_width = t_wvform[idx_right]-t_wvform[idx_left]
-        return spike_width
-    
-    mu_all = unit['mean_waveform']
-    std_all = unit['std_waveform']
-    waveform_size = mu_all.shape[0]
-    num_chans = mu_all.shape[1]
-    
-    # get the largest deviation in the negative direction
-    max_ind = np.unravel_index(np.argmin(mu_all),mu_all.shape)
-    max_chan = max_ind[1]
-    
-    mu_max = mu_all[:,max_chan]
-    sd_max = std_all[:,max_chan]
-    
-    if type=='OE':sample_rate=30000.
-    else: sample_rate=40000.
-    
-    interp_fn_m = interpolate.interp1d(np.linspace(0,(waveform_size-1)/sample_rate,waveform_size),mu_max,kind='cubic')
-    interp_fn_sd = interpolate.interp1d(np.linspace(0,(waveform_size-1)/sample_rate,waveform_size),sd_max,kind='cubic')
-    
-    interp_t = np.linspace(0,(waveform_size-1)/sample_rate,waveform_size*125)
-    interp_m = interp_fn_m(interp_t)
-    interp_sd = interp_fn_sd(interp_t)
-    
-    max_idx = np.argmin(interp_m)
-    peak_snr_wvform = interp_m[max_idx]/interp_sd[max_idx]
-    
-    fwhm = get_fwhm(interp_m,interp_t)
-    fwhm = 1000.*fwhm # in ms
-    p2t_ratio,p2t_time = get_peak_trough(interp_m,interp_t)
-    p2t_time = 1000.* p2t_time # in ms
-    
-    return interp_t,interp_m,interp_sd,peak_snr_wvform,fwhm,p2t_ratio,p2t_time
-     
-## OR tuning    
-def get_or_tuning(location, sess, unit):
+def verify_uint_qualities(base_loc =r'C:\Users\bsriram\Desktop\Data_V1Paper'):
+    sub_locs = ['DetailsProcessedPhysOnly','DetailsProcessedBehaved','EyeTracked']
+    types = ['OE','OE','plexon']
+    session_types = ['PhysOnly','Behaved','EyeTracked']
+    for type,session_type,sub_loc in zip(types,session_types,sub_locs):
+        for sess in os.listdir(os.path.join(base_loc,sub_loc)):
+            subj = get_subject_from_session(sess)
+            out = []
+            spike_and_trial_file = [f for f in os.listdir(os.path.join(base_loc,sub_loc,sess)) if f.startswith('spike_and_trials')]
+            assert len(spike_and_trial_file)==1, 'too many or too few spike and trials pickle'
+            spike_and_trial_file = spike_and_trial_file[0]
+            with open(os.path.join(base_loc,sub_loc,sess,spike_and_trial_file),'rb') as f:
+                sess_data = pickle.load(f)
+            quals = np.asarray([unit['manual_quality'] for unit in sess_data['spike_records']['units']])
+            print('{0}:{1}'.format(sess,np.unique(quals)))
 
-    def get_orientation_tuning_stepname(sess):
-        subj = get_subject_from_session(sess)
-        if subj in ['bas072','bas074','m284']:
-            return 'gratings',500
-        elif subj in ['bas077','bas078','bas079','bas080','bas081a']:
-            return 'gratings',2000
-        elif subj in ['bas070']:
-            if sess in ['bas070_2015-08-05_12-31-50','bas070_2015-08-06_12-09-26','bas070_2015-08-11_12-51-37','bas070_2015-08-13_11-56-14_1']:
-                return None, None
-            else:
-                return 'gratings',500
-        elif subj in ['bas081b']:
-            return 'LongDurationOR_LED',2000
-        elif subj in ['m317','m311','m318','m325']:
-            return 'OrSweep',2000
+def flatten_long_dur_dict(inp,type='OE'):
+    out = {}
+    # get the failed_why in the session
+    failed_whys = np.asarray([f['failed_why'] for f in inp])
+    if np.all(failed_whys=='no_longdur_decoding_stepname'):
+        what_happened = 'no_data'
+    elif np.all(failed_whys=='n/a'):
+        # get the units in the session
+        units = [u['unit_id'] for u in inp]
+        # get the trial_numbers
+        ldd = 'long_dur_decoding_details'
+        t_nums = inp[0][ldd]['trial_numbers']
+        ors = inp[0][ldd]['orientations']
+        ctrs = inp[0][ldd]['contrasts']
+        phis = inp[0][ldd]['phases']
+        durs = inp[0][ldd]['max_durations']
+        
+        # check if all units have the same trial numbers, len(orientations),len(contrasts),len(phases),len(max_durations)
+        for u in inp:
+            assert np.all(u[ldd]['trial_numbers']==t_nums), 'different trial numbers found for {0}'.format(u['unit_id'])
+            assert np.all(u[ldd]['orientations']==ors), 'different orientations found for {0}'.format(u['unit_id'])
+            assert np.all(u[ldd]['contrasts']==ctrs), 'different contrasts found for {0}'.format(u['unit_id'])
+            assert np.all(u[ldd]['phases']==phis), 'different phases found for {0}'.format(u['unit_id'])
+            assert np.all(u[ldd]['max_durations']==durs), 'different max_durations found for {0}'.format(u['unit_id'])
+
+            assert len(u[ldd]['spike_raster'])==len(t_nums), 'different len(spike_raster) found for {0}'.format(u['unit_id'])
             
-    def get_OSI(orn,m):
-        m = np.asarray(m)
-        orn = np.asarray(orn)
-        
-        assert np.size(m)==np.size(orn)
-        
-        # ensure ascending orientation
-        order = np.argsort(orn)
-        orn = orn[order]
-        m = m[order]
-        
-        # get or with highest mean firing rate
-        which_max = np.argmax(m)
-        or_max = orn[which_max]
-        if (which_max>(np.size(m)/2)):
-            or_min = or_max-(np.pi/2)
+        # now we are back to business
+        out['trial_number'] = t_nums
+        if type=='OE':
+            out['orientations'] = np.rad2deg(ors)
         else:
-            or_min = or_max+(np.pi/2)
-        which_min = np.argmin(np.abs((orn-or_min)))
-        
-        m_max = m[which_max]
-        m_min = m[which_min]
-        np.seterr(all='raise')
-        try:
-            osi = ((m_max-m_min)/(m_max+m_min))
-        except:
-            osi = None
-        return osi,or_max
-        
-    def get_vector_sum(orn,m):
-        m = np.asarray(m)
-        orn = np.asarray(orn)
-        orn = 2*(-orn + (np.pi/2)) 
-        
-        assert np.size(m)==np.size(orn)
-        
-        complex_sum = np.dot(m,np.exp(1j*orn))    
-        strength = np.abs(complex_sum)
-        angle = np.angle(complex_sum)
-        if angle<0:
-            angle = 2*np.pi+angle
-        angle = np.pi/2-angle/2
-        
-        if angle > np.pi/2:
-            angle = np.pi-angle
-        elif angle<-np.pi/2:
-            angle = np.pi+angle
-        return strength,angle
-    
-    def get_or_tuning_dict(spike_raster,trial_numbers,orientations):
-        or_tuning = {'orientation':[],'m_rate':[],'std_rate':[],'n_trials':[]}
-        spikes_found = False
-        for orn in np.unique(orientations):
-            # find those trials and find mean and std 
-            trs = trial_numbers[orientations==orn]
-            spike_nums_that_or = [np.size(spike_raster[tr]) for tr in trs]
-            sp_mean_that_or = np.mean(spike_nums_that_or)
-            if sp_mean_that_or != 0:
-                spikes_found = True
-            sp_std_that_or = np.std(spike_nums_that_or)
-            or_tuning['orientation'].append(orn)
-            or_tuning['n_trials'].append(np.size(trs))
-            or_tuning['m_rate'].append(sp_mean_that_or)
-            or_tuning['std_rate'].append(sp_std_that_or)
-        if not spikes_found:
-            print('Non spikes in orientation tuning for that unit')
-        return(or_tuning, spikes_found)
-    
-    unit_details = {}
-    failed_why = None
-    with open(os.path.join(location,sess,'spike_and_trials.pickle'),'rb') as f:
-        data = pickle.load(f)
-    try:
-        stepname,durations = get_orientation_tuning_stepname(sess)
-    except:
-        print('failed to get stepname')
-        stepname = None
-    framechan,shift = get_frame_channel(sess)
-    
-    if not stepname: 
-        failed_why = 'no_or_tuning_stepname'
-        return unit_details, failed_why
-    
-    trial_numbers = np.asarray(data['trial_records']['trial_number'])
-    step_names = np.asarray(data['trial_records']['step_name'])
-    contrasts = np.asarray(data['trial_records']['contrast'])
-    max_durations = np.asarray(data['trial_records']['max_duration'])
-    phases = np.asarray(data['trial_records']['phase'])
-    orientations = np.asarray(data['trial_records']['orientation'])
-    
-    which_step = step_names==stepname
-    trial_numbers = trial_numbers[which_step]
-    step_names = step_names[which_step]
-    contrasts = contrasts[which_step]
-    max_durations = max_durations[which_step]
-    phases = phases[which_step]
-    orientations = orientations[which_step]
-    frame_start_index = []
-    frame_end_index = []    
-    for trial_number in trial_numbers:
-        event_for_trial = data['trial_records']['events']['ttl_events'][trial_number]
-        if shift:
-            frame_start_index.append(event_for_trial[framechan]['rising'][1])
-            frame_end_index.append(event_for_trial[framechan]['rising'][-2])
+            out['orientations'] = ors
+        out['contrasts'] = ctrs
+        out['phases'] = phis
+        if type=='OE':
+            out['durations'] = durs/60.
         else:
-            frame_start_index.append(event_for_trial[framechan]['rising'][0])
-            frame_end_index.append(event_for_trial[framechan]['rising'][-1])
-            
-    frame_start_index = np.asarray(frame_start_index)
-    frame_end_index = np.asarray(frame_end_index)
+            out['durations'] = durs
         
-    spike_time = np.squeeze(np.asarray(unit['spike_time']))
-    spike_raster = {}
-    for trial_number in trial_numbers:
-        frame_start_time = frame_start_index[trial_numbers==trial_number][0]/30000
-        frame_end_time = frame_end_index[trial_numbers==trial_number][0]/30000
-        
-        spikes_that_trial = spike_time[np.bitwise_and(spike_time>frame_start_time,spike_time<frame_end_time)]-frame_start_time
-        spike_raster[trial_number] = spikes_that_trial
-    or_tuning, spikes_found = get_or_tuning_dict(spike_raster,trial_numbers,orientations)
-    if spikes_found:
-        unit_details['or_tuning'] = or_tuning
-        unit_details['osi'] = get_OSI(or_tuning['orientation'],or_tuning['m_rate'])
-        unit_details['vector_sum'] = get_vector_sum(or_tuning['orientation'],or_tuning['m_rate'])
-        # jack_knife
-        unit_details['trial_jackknife'] = []
-        unit_details['osi_jackknife'] = []
-        unit_details['vector_sum_jackknife'] = []
-        for key in spike_raster:
-            # prep the copies
-            spike_raster_jack_knife = spike_raster.copy()
-            which_tr = trial_numbers==key
-            idx = np.where(np.logical_not(which_tr))[0]
-            trial_number_jack_knife = trial_numbers[idx]
-            orientation_jack_knife = orientations[idx]
-            del spike_raster_jack_knife[key]
-            
-            or_tuning_jack_knife,spikes_found_jackknife=get_or_tuning_dict(spike_raster_jack_knife,trial_number_jack_knife,orientation_jack_knife)
-            unit_details['trial_jackknife'].append(key)
-            unit_details['osi_jackknife'].append(get_OSI(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
-            unit_details['vector_sum_jackknife'].append(get_vector_sum(or_tuning_jack_knife['orientation'],or_tuning_jack_knife['m_rate']))
-        print('done_unit')
+        for u in inp:
+            current_unit = []
+            uid = u['unit_id']
+            for t in t_nums:
+                current_unit.append(u[ldd]['spike_raster'][t])
+            out[uid] = current_unit
+        what_happened = 'has_data'
     else:
-        unit_details = {}
-        failed_why = 'no_spikes'
-    return unit_details, failed_why
-    
-## Quality
-def get_unit_quality(unit, model_loc,session_type='OE'):
-    kwik_model = get_model(model_loc,session_type=session_type)
-    
-    kwik_model.channel_group = unit['shank_no']
-    kwik_model.clustering = 'main'
-    spike_time = kwik_model.spike_samples.astype(np.float64)/kwik_model.sample_rate
-    spike_id = kwik_model.spike_ids
-    cluster_id = kwik_model.spike_clusters
-    fet_masks = kwik_model.all_features_masks
-    fet = np.squeeze(fet_masks[:,:,0])
-    
-    that_cluster_idx = np.argwhere(cluster_id==unit['cluster_id'])
-    other_cluster_idx = np.argwhere(cluster_id!=unit['cluster_id'])
-    
-    fet_that = np.squeeze(fet[that_cluster_idx,:])
-    fet_other = np.squeeze(fet[other_cluster_idx,:])
-    
-    uq,cr,failure_mode = cluster_quality_core(fet_that,fet_other)
+        pdb.set_trace()
+        print('trial')
+    return what_happened, out
 
-    return uq,cr,failure_mode
+def flatten_short_dur_dict(inp, type='OE'):
+    out = {}
+    # get the failed_why in the session
+    failed_whys = np.asarray([f['failed_why'] for f in inp])
+    if np.all(failed_whys=='no_shortdur_decoding_stepname'):
+        what_happened = 'no_data'
+    elif np.all(failed_whys=='n/a'):
+        # get the units in the session
+        units = [u['unit_id'] for u in inp]
+        # get the trial_numbers
+        sdd = 'short_dur_decoding_details'
+        t_nums = inp[0][sdd]['trial_numbers']
+        ors = inp[0][sdd]['orientations']
+        ctrs = inp[0][sdd]['contrasts']
+        phis = inp[0][sdd]['phases']
+        durs = inp[0][sdd]['max_durations']
+        
+        # check if all units have the same trial numbers, len(orientations),len(contrasts),len(phases),len(max_durations)
+        for unit in inp:
+            assert np.all(unit[sdd]['trial_numbers']==t_nums), 'different trial numbers found for {0}'.format(u['unit_id'])
+            assert np.all(unit[sdd]['orientations']==ors), 'different orientations found for {0}'.format(u['unit_id'])
+            assert np.all(unit[sdd]['contrasts']==ctrs), 'different contrasts found for {0}'.format(u['unit_id'])
+            assert np.all(unit[sdd]['phases']==phis), 'different phases found for {0}'.format(u['unit_id'])
+            assert np.all(unit[sdd]['max_durations']==durs), 'different max_durations found for {0}'.format(u['unit_id'])
 
-     
+            assert len(unit[sdd]['spike_raster'])==len(t_nums), 'different len(spike_raster) found for {0}'.format(u['unit_id'])
+            
+        # remove the ones from the end and then remove the nans
+        sorted_tnums = np.sort(t_nums)
+        sorted_tnums = sorted_tnums[::-1]
+        bad_tnums = []
+        unit = inp[0]
+        for t in sorted_tnums:
+            temp = unit[sdd]['spike_raster'][t]
+            try:
+                if temp.size==0: bad_tnums.append(t)
+                else: break
+            except ValueError:
+                break
+        bad_tnums = np.array(bad_tnums)
+        
+        for u in inp:
+            bad_tnums_that_unit = []
+            for t in sorted_tnums:
+                temp = u[sdd]['spike_raster'][t]
+                try:
+                    if temp.size==0: bad_tnums_that_unit.append(t)
+                    else: break
+                except ValueError:
+                    break
+            bad_tnums_that_unit = np.array(bad_tnums_that_unit)
+            bad_tnums = np.intersect1d(bad_tnums,bad_tnums_that_unit)
+            nan_tnums_that_unit = []
+            for t in t_nums:
+                temp=u[sdd]['spike_raster'][t]
+                try: 
+                    if np.isnan(temp):nan_tnums_that_unit.append(t)
+                except ValueError: continue
+            nan_tnums_that_unit = np.array(nan_tnums_that_unit)
+            bad_tnums = np.union1d(bad_tnums,nan_tnums_that_unit)
+                
+        which = np.isin(t_nums,bad_tnums,assume_unique =True,invert=True)
+        # now we are back to business
+        out['trial_number'] = t_nums[which]
+        if type=='OE':
+            out['orientations'] = np.rad2deg(ors[which])
+        else:
+            out['orientations'] = ors[which]
+        out['contrasts'] = ctrs[which]
+        out['phases'] = phis[which]
+        if type=='OE':
+            out['durations'] = durs[which]/60.
+        else:
+            out['durations'] = durs[which]
+            
+        good_tnums = t_nums[which]
+        for u in inp:
+            current_unit = []
+            uid = u['unit_id']
+            for t in good_tnums:
+                current_unit.append(u[sdd]['spike_raster'][t])
+            out[uid] = current_unit
+            
+        what_happened = 'has_data'
+    else:
+        pdb.set_trace()
+        print('trial')
+    return what_happened, out
+
 if __name__=='__main__':
-    quality = get_features('unit_quality')
-    with open('details_quality.pickle','wb') as f:
-        pickle.dump(quality,f)
+    # quality = get_features('unit_quality')
+    # with open('details_quality.pickle','wb') as f:
+        # pickle.dump(quality,f)
     
-    waveform_details = get_features('waveform_details')
-    with open('details_waveform.pickle','wb') as f:
-        pickle.dump(waveform_details,f)
+    # waveform_details = get_features('waveform_details')
+    # with open('details_waveform.pickle','wb') as f:
+        # pickle.dump(waveform_details,f)
     
-    firing_rates = get_features('firing_rates')
-    with open('details_fr.pickle','wb') as f:
-        pickle.dump(firing_rates,f)
+    # firing_rates = get_features('firing_rates')
+    # with open('details_fr.pickle','wb') as f:
+        # pickle.dump(firing_rates,f)
+        
+    # manual_quality = get_features('manual_quality')
+    # with open('details_manual_quality.pickle','wb') as f:
+        # pickle.dump(manual_quality,f)
+    
+    # or_tuning_details = get_features('or_tuning_details')
+    # with open('details_or_tuning.pickle','wb') as f:
+        # pickle.dump(or_tuning_details,f)  
+    
+    # session_types = get_features('session_type')
+    # with open('session_types_details.pickle','wb') as f:
+        # pickle.dump(session_types,f) 
+
+    # long_dur_decoding_details = get_features('long_dur_decoding_details')
+    # with open('long_dur_decoding_details.pickle','wb') as f:
+        # pickle.dump(long_dur_decoding_details,f)
+
+    # short_dur_decoding_details = get_features('short_dur_decoding_details')
+    # with open('short_dur_decoding_details.pickle','wb') as f:
+        # pickle.dump(short_dur_decoding_details,f)        
+    
+    # spike_loc_details = get_features('spike_location_details')
+    # with open('spike_loc_details.pickle','wb') as f:
+        # pickle.dump(spike_loc_details,f)        
+    
+    # sess_details = get_features('session_details')
+    # with open('session_details.pickle','wb') as f:
+        # pickle.dump(sess_details,f)        
+    
+    # isi_details = get_features('isi_details')
+    # with open('isi_details.pickle','wb') as f:
+        # pickle.dump(isi_details,f)        
+    
+        
+    # make_and_merge_dfs()
+    # verify_uint_qualities()
+    make_long_dur_session_dfs()
+    make_short_dur_session_dfs()
+
+    
         

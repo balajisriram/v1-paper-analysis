@@ -369,7 +369,7 @@ def get_channel_events(loc,events):
     timestamps = [x for i,x in enumerate(data['timestamps']) if fil[i]==True]
     channel = [x for i,x in enumerate(data['channel']) if fil[i]==True]
     rising_edge = [x for i,x in enumerate(data['eventId']) if fil[i]==True]
-    unique_channels = numpy.unique(channel)
+    unique_channels = np.unique(channel)
     
     ttl_events = {} # across all trials. referenced by trial_number
     for i,tr_num in enumerate(events['trial_number']):
