@@ -3,6 +3,8 @@ import pdb
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+import multiprocessing as mp
+import os
 
 def get_units(inp):
     cols = inp.columns.values
@@ -84,3 +86,41 @@ def predict_ori(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbo
     else: consistent = 'n/a'
     return performance,np.array(coeffs),np.array(intercepts),consistent
 
+
+if __name__=='__main__':
+    loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
+    save_loc = '/camhpc/home/bsriram/data/Analysis'
+    time_filters = [np.array([0.,0.01]),
+                    np.array([0.,0.025]),
+                    np.array([0.,0.05]),
+                    np.array([0.,0.1]),
+                    np.array([0.,0.25]),
+                    np.array([0.,0.5]),
+                    np.array([0.,1.]),
+                    np.array([0.,2.5]),
+                    ]
+    names = ['ShortDurDecodingFrame_10ms.df',
+             'ShortDurDecodingFrame_25ms.df',
+             'ShortDurDecodingFrame_50ms.df',
+             'ShortDurDecodingFrame_100ms.df',
+             'ShortDurDecodingFrame_250ms.df',
+             'ShortDurDecodingFrame_500ms.df',
+             'ShortDurDecodingFrame_1000ms.df',
+             'ShortDurDecodingFrame_2500ms.df',]
+    for tf,name in zip(time_filters,names):
+        unit_list = []
+        for f in os.listdir(loc):
+            df = pd.read_pickle(os.path.join(loc,f))
+            units = get_units(df)
+            
+            for unit in units:
+                this_unit = {}
+                this_unit['unit_id'] = unit
+                df_filt = filter_session(df,unit_filter=unit)
+                prefs,coeffs,intercepts,consistency = predict_ori(df_filt,verbose=False)
+                this_unit['mean_performance'] = np.mean(prefs)
+                this_unit['mean_coeff'] = np.mean(coeffs)
+                this_unit['is_consistent'] = consistency
+                unit_list.append(this_unit)
+        decoding_df = pd.DataFrame(unit_list)
+        decoding_df.to_pickle(os.path.join(save_loc,name))
