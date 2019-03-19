@@ -168,12 +168,12 @@ def process_session(loc,df_name,fit_intercept=True):
     for unit in units:
         this_unit = {}
         this_unit['unit_id'] = unit
-        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]))
+        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,2.]))
         prefs,coeffs,intercepts,pvals,consistency = predict_ori_sm(df_filt,verbose=False,fit_intercept=fit_intercept)
         this_unit['mean_performance'] = np.nanmean(prefs)
         this_unit['mean_coeff'] = np.nanmean(coeffs)
         this_unit['mean_intercept'] = np.nanmean(intercepts)
-        this_unit['is_consistent_shortdur'] = consistency
+        this_unit['is_consistent'] = consistency
         units_this_session.append(this_unit)
     save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
     with open(os.path.join(save_loc,df_name),'wb') as f:
@@ -196,7 +196,7 @@ def handle_error(er):
     print(er)
     
 if __name__=='__main__':
-    loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
+    loc = '/camhpc/home/bsriram/data/Analysis/LongDurSessionDFs'
     print(sys.argv)
     print(int(sys.argv[1]))
     which = int(sys.argv[1])
@@ -242,7 +242,7 @@ if __name__=='__main__':
     f = os.listdir(loc)
     print(f[0:10])
     print(f[which])
-    process_session(loc,f[which],fit_intercept=False)
+    process_session(loc,f[which],fit_intercept=True)
     #for job in f:
     #    pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
