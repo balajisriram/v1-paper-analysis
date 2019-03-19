@@ -157,7 +157,7 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
             intercepts.append(np.nan)
             performance.append(np.nan)
             pvals.append(np.nan)
-    if num_units==1:consistent = is_consistent_sm(np.array(coeffs))
+    if num_units==1:consistent = is_consistent_sm(np.array(pvals))
     else: consistent = 'n/a'
     return performance,coeffs,intercepts,pvals,consistent
 
@@ -179,7 +179,7 @@ def process_session(loc,df_name):
     with open(os.path.join(save_loc,df_name),'wb') as f:
         pickle.dump(units_this_session,f)
     with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
-        f.write(result_name+'\n')
+        f.write(df_name+'\n')
     return 0
 
 def collect_result(result):
