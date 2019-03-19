@@ -5,6 +5,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 import multiprocessing as mp
 import os
+import statsmodels.api as sm
+from tqdm import tqdm
+import pickle
+
 
 def get_units(inp):
     cols = inp.columns.values
@@ -38,8 +42,19 @@ def is_consistent(coeffs,frac=0.7):
     if np.any(np.isnan(coeffs)): pdb.set_trace()
     if num_given_sign/num>frac: return True
     else: return False
+    
+def is_consistent_sm(pvals,frac=0.7):
+    pvals = pvals[~np.isnan(pvals)]
+    num = pvals.size
+    num_sig = np.sum(pvals<0.05)
+    try:
+        if num_sig/num>frac: return True
+        else: return False
+    except Exception as e:
+        print(e)
+        return False
 
-def predict_ori(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbose=False):
+def predict_ori_sk(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbose=False):
     X = df[get_units(df)]
     y = df['orientations']
     num_units = len(get_units(df))
@@ -86,41 +101,136 @@ def predict_ori(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbo
     else: consistent = 'n/a'
     return performance,np.array(coeffs),np.array(intercepts),consistent
 
+def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbose=False):
+    X = df[get_units(df)]
+    y = df['orientations']
+    num_units = len(get_units(df))
+    if verbose:
+        print('units found : {0}'.format(get_units(df)))
+        print('num units found: {0}'.format(num_units))
+        print(df['orientations'].describe())
+    # deal with totally bananas orientations
+    transforms = {}
+    for ori in y.unique():
+        mapped_ori = ori
+        while mapped_ori>90:
+            mapped_ori = mapped_ori-180
+        while mapped_ori<-90:
+            mapped_ori = mapped_ori+180
+        transforms[ori]=mapped_ori
+    y = y.map(transforms)
+    
+    # make the orientations 0 or 1
+    transforms = {}
+    for ori in y.unique():
+        if ori>0:transforms[ori] = 1
+        elif ori<0:transforms[ori]=0
+        else: transforms[ori]=0
+    y = y.map(transforms)
+    performance = []
+    coeffs = []
+    intercepts = []
+    pvals = []
+    for i in range(n_splits):
+        X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
+        if fit_intercept:
+            X_train['intercept'] = 1.0
+            X_test['intercept'] = 1.0
+        try:
+            logreg = sm.Logit(y_train,X_train)
+            res = logreg.fit(disp=False)
+            predicted = res.predict(X_test)
+            predicted = (predicted>=0.5)
+            perf = np.sum(predicted==y_test)/y_test.size
+            coeffs.append(res.params[0])
+            intercepts.append(res.params[0])
+            performance.append(perf)
+            pvals.append(res.pvalues[0])
+        except ValueError:
+            coeffs.append(np.nan)
+            intercepts.append(np.nan)
+            performance.append(np.nan)
+            pvals.append(np.nan)
+        except Exception as e:
+            print(e)
+            pdb.set_trace()
+            print('waiting')
+    if num_units==1:consistent = is_consistent_sm(np.array(coeffs))
+    else: consistent = 'n/a'
+    return performance,coeffs,intercepts,pvals,consistent
 
+def process_session(loc,df_name):
+    df = pd.read_pickle(os.path.join(loc,df_name))
+    units = get_units(df)
+    units_this_session = []
+    for unit in units:
+        this_unit = {}
+        this_unit['unit_id'] = unit
+        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]))
+        prefs,coeffs,intercepts,pvals,consistency = predict_ori_sm(df_filt,verbose=False)
+        this_unit['mean_performance_shortdur'] = np.mean(prefs)
+        this_unit['mean_coeff_shortdur'] = np.mean(coeffs)
+        this_unit['is_consistent_shortdur'] = consistency
+        units_this_session.append(this_unit)
+    return (units_this_session,df_name)
+
+def collect_result(result):
+    result_dict = result[0]
+    result_name = result[1]
+    
+    save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
+    with open(os.path.join(save_loc,result_name),'wb') as f:
+        pickle.load(result_dict,f)
+    with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
+        f.write(result_name+'\n')
+    
+def handle_error(er):
+    print(er)
+    
 if __name__=='__main__':
     loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
-    save_loc = '/camhpc/home/bsriram/data/Analysis'
-    time_filters = [np.array([0.,0.01]),
-                    np.array([0.,0.025]),
-                    np.array([0.,0.05]),
-                    np.array([0.,0.1]),
-                    np.array([0.,0.25]),
-                    np.array([0.,0.5]),
-                    np.array([0.,1.]),
-                    np.array([0.,2.5]),
-                    ]
-    names = ['ShortDurDecodingFrame_10ms.df',
-             'ShortDurDecodingFrame_25ms.df',
-             'ShortDurDecodingFrame_50ms.df',
-             'ShortDurDecodingFrame_100ms.df',
-             'ShortDurDecodingFrame_250ms.df',
-             'ShortDurDecodingFrame_500ms.df',
-             'ShortDurDecodingFrame_1000ms.df',
-             'ShortDurDecodingFrame_2500ms.df',]
-    for tf,name in zip(time_filters,names):
-        unit_list = []
-        for f in os.listdir(loc):
-            df = pd.read_pickle(os.path.join(loc,f))
-            units = get_units(df)
-            
-            for unit in units:
-                this_unit = {}
-                this_unit['unit_id'] = unit
-                df_filt = filter_session(df,unit_filter=unit)
-                prefs,coeffs,intercepts,consistency = predict_ori(df_filt,verbose=False)
-                this_unit['mean_performance'] = np.mean(prefs)
-                this_unit['mean_coeff'] = np.mean(coeffs)
-                this_unit['is_consistent'] = consistency
-                unit_list.append(this_unit)
-        decoding_df = pd.DataFrame(unit_list)
-        decoding_df.to_pickle(os.path.join(save_loc,name))
+    
+    pool = mp.Pool(24)
+    if False:
+        time_filters = [np.array([0.,0.01]),
+                        np.array([0.,0.025]),
+                        np.array([0.,0.05]),
+                        np.array([0.,0.1]),
+                        np.array([0.,0.25]),
+                        np.array([0.,0.5]),
+                        np.array([0.,1.]),
+                        np.array([0.,2.5]),
+                        ]
+        names = ['ShortDurDecodingFrame_10ms.df',
+                 'ShortDurDecodingFrame_25ms.df',
+                 'ShortDurDecodingFrame_50ms.df',
+                 'ShortDurDecodingFrame_100ms.df',
+                 'ShortDurDecodingFrame_250ms.df',
+                 'ShortDurDecodingFrame_500ms.df',
+                 'ShortDurDecodingFrame_1000ms.df',
+                 'ShortDurDecodingFrame_2500ms.df',]
+        for tf,name in zip(time_filters,names):
+            unit_list = []
+            for f in os.listdir(loc):
+                df = pd.read_pickle(os.path.join(loc,f))
+                units = get_units(df)
+                
+                for unit in units:
+                    this_unit = {}
+                    this_unit['unit_id'] = unit
+                    df_filt = filter_session(df,unit_filter=unit)
+                    prefs,coeffs,intercepts,consistency = predict_ori(df_filt,verbose=False)
+                    this_unit['mean_performance'] = np.mean(prefs)
+                    this_unit['mean_coeff'] = np.mean(coeffs)
+                    this_unit['is_consistent'] = consistency
+                    unit_list.append(this_unit)
+            decoding_df = pd.DataFrame(unit_list)
+            decoding_df.to_pickle(os.path.join(save_loc,name))
+        
+    
+    f = os.list_dir(loc)
+    for job in f:
+        pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error))
+        
+    pool.close()
+    pool.join()
