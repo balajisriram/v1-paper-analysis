@@ -230,7 +230,7 @@ if __name__=='__main__':
     
     f = os.list_dir(loc)
     for job in f:
-        pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error))
+        pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
     pool.close()
     pool.join()
