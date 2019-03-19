@@ -199,6 +199,7 @@ if __name__=='__main__':
     print(sys.argv)
     print(int(sys.argv[1]))
     which = int(sys.argv[1])
+    which = which-1
     # pool = mp.Pool(24)
     if False:
         time_filters = [np.array([0.,0.01]),
@@ -238,6 +239,7 @@ if __name__=='__main__':
         
     
     f = os.listdir(loc)
+    print(f[0:10])
     print(f[which])
     #process_session(loc,f[which])
     #for job in f:
