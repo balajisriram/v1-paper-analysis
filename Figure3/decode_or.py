@@ -8,7 +8,7 @@ import os
 import statsmodels.api as sm
 from tqdm import tqdm
 import pickle
-
+import sys
 
 def get_units(inp):
     cols = inp.columns.values
@@ -152,9 +152,11 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
             performance.append(np.nan)
             pvals.append(np.nan)
         except Exception as e:
-            print(e)
-            pdb.set_trace()
-            print('waiting')
+            print('Unknown Error :::::::::',get_units(df),e)
+            coeffs.append(np.nan)
+            intercepts.append(np.nan)
+            performance.append(np.nan)
+            pvals.append(np.nan)
     if num_units==1:consistent = is_consistent_sm(np.array(coeffs))
     else: consistent = 'n/a'
     return performance,coeffs,intercepts,pvals,consistent
@@ -172,7 +174,12 @@ def process_session(loc,df_name):
         this_unit['mean_coeff_shortdur'] = np.mean(coeffs)
         this_unit['is_consistent_shortdur'] = consistency
         units_this_session.append(this_unit)
-    return (units_this_session,df_name)
+    save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
+    with open(os.path.join(save_loc,df_name),'wb') as f:
+        pickle.dump(units_this_session,f)
+    with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
+        f.write(result_name+'\n')
+    return 0
 
 def collect_result(result):
     result_dict = result[0]
@@ -189,8 +196,10 @@ def handle_error(er):
     
 if __name__=='__main__':
     loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
-    
-    pool = mp.Pool(24)
+    print(sys.argv)
+    print(int(sys.argv[1]))
+    which = int(sys.argv[1])
+    # pool = mp.Pool(24)
     if False:
         time_filters = [np.array([0.,0.01]),
                         np.array([0.,0.025]),
@@ -228,9 +237,11 @@ if __name__=='__main__':
             decoding_df.to_pickle(os.path.join(save_loc,name))
         
     
-    f = os.list_dir(loc)
-    for job in f:
-        pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
+    f = os.listdir(loc)
+    print(f[which])
+    #process_session(loc,f[which])
+    #for job in f:
+    #    pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
-    pool.close()
-    pool.join()
+    #pool.close()
+    #pool.join()
