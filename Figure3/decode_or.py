@@ -170,8 +170,9 @@ def process_session(loc,df_name):
         this_unit['unit_id'] = unit
         df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]))
         prefs,coeffs,intercepts,pvals,consistency = predict_ori_sm(df_filt,verbose=False)
-        this_unit['mean_performance_shortdur'] = np.mean(prefs)
-        this_unit['mean_coeff_shortdur'] = np.mean(coeffs)
+        this_unit['mean_performance'] = np.nanmean(prefs)
+        this_unit['mean_coeff'] = np.nanmean(coeffs)
+        this_unit['mean_intercept'] = np.nanmean(intercepts)
         this_unit['is_consistent_shortdur'] = consistency
         units_this_session.append(this_unit)
     save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
@@ -241,7 +242,7 @@ if __name__=='__main__':
     f = os.listdir(loc)
     print(f[0:10])
     print(f[which])
-    #process_session(loc,f[which])
+    process_session(loc,f[which])
     #for job in f:
     #    pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
