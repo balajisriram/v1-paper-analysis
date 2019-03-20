@@ -104,6 +104,17 @@ def predict_ori_sk(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
 def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbose=False):
     X = df[get_units(df)]
     y = df['orientations']
+    
+    ctrs = df.contrasts
+    durs = df.durations
+    
+    # fix durations...
+    durs[durs<0.05] = 0.05
+    durs[durs>0.2] = 0.2
+    
+    interested_contrasts = [0,0.15,1]
+    interested_durations = [0.05,0.1,0.15,0.2]
+    
     num_units = len(get_units(df))
     if verbose:
         print('units found : {0}'.format(get_units(df)))
@@ -131,6 +142,7 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
     coeffs = []
     intercepts = []
     pvals = []
+    perf_matrix_dur_ctr = [[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
     for i in range(n_splits):
         X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
         if fit_intercept:
@@ -146,20 +158,46 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
             intercepts.append(res.params[0])
             performance.append(perf)
             pvals.append(res.pvalues[0])
+            
+            # okay now try using that model to predict for all specific orientations and durations
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    which = np.bitwise_and(ctrs==ctr,durs==dur)
+                    if np.sum(which)>0:
+                        X_sub = X[which]
+                        y_sub = y[which]
+                        predicted_sub = res.predict(X_sub)
+                        predicted_sub = (predicted>=0.5)
+                        perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
+                        perf_matrix_dur_ctr[ii][jj].append(perf_sub)
+                    else:
+                        perf_matrix_dur_ctr[ii][jj].append(np.nan)
+            
         except ValueError:
             coeffs.append(np.nan)
             intercepts.append(np.nan)
             performance.append(np.nan)
             pvals.append(np.nan)
+            
+            # fill'em up with nans
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    perf_matrix_dur_ctr[ii][jj].append(np.nan)
+                        
         except Exception as e:
             print('Unknown Error :::::::::',get_units(df),e)
             coeffs.append(np.nan)
             intercepts.append(np.nan)
             performance.append(np.nan)
             pvals.append(np.nan)
+            
+            # fill'em up with nans
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    perf_matrix_dur_ctr[ii][jj].append(np.nan)
     if num_units==1:consistent = is_consistent_sm(np.array(pvals))
     else: consistent = 'n/a'
-    return performance,coeffs,intercepts,pvals,consistent
+    return performance,coeffs,intercepts,pvals,consistent,perf_matrix_dur_ctr
 
 def process_session(loc,df_name,fit_intercept=True):
     df = pd.read_pickle(os.path.join(loc,df_name))
@@ -168,12 +206,13 @@ def process_session(loc,df_name,fit_intercept=True):
     for unit in units:
         this_unit = {}
         this_unit['unit_id'] = unit
-        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,2.]))
-        prefs,coeffs,intercepts,pvals,consistency = predict_ori_sm(df_filt,verbose=False,fit_intercept=fit_intercept)
+        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]))
+        prefs,coeffs,intercepts,pvals,consistency,perf_matrix_dur_ctr = predict_ori_sm(df_filt,verbose=False,fit_intercept=fit_intercept)
         this_unit['mean_performance'] = np.nanmean(prefs)
         this_unit['mean_coeff'] = np.nanmean(coeffs)
         this_unit['mean_intercept'] = np.nanmean(intercepts)
         this_unit['is_consistent'] = consistency
+        this_unit['perf_matrix_dur_ctr'] = perf_matrix_dur_ctr
         units_this_session.append(this_unit)
     save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
     with open(os.path.join(save_loc,df_name),'wb') as f:
@@ -196,7 +235,7 @@ def handle_error(er):
     print(er)
     
 if __name__=='__main__':
-    loc = '/camhpc/home/bsriram/data/Analysis/LongDurSessionDFs'
+    loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
     print(sys.argv)
     print(int(sys.argv[1]))
     which = int(sys.argv[1])
