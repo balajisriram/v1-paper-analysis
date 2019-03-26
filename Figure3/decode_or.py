@@ -168,9 +168,10 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
                     which = np.bitwise_and(ctrs==ctr,durs==dur)
                     if np.sum(which)>0:
                         X_sub = X[which]
+                        X_sub['intercept'] = 1.0
                         y_sub = y[which]
                         predicted_sub = res.predict(X_sub)
-                        predicted_sub = (predicted>=0.5)
+                        predicted_sub = (predicted_sub>=0.5)
                         perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
                         perf_matrix_dur_ctr[ii][jj].append(perf_sub)
                     else:
@@ -178,7 +179,6 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
                         
         except Exception as e:
             print('Unknown Error :::::::::',get_units(df),e)
-            pdb.set_trace()
             coeffs.append(np.nan)
             intercepts.append(np.nan)
             performance.append(np.nan)
