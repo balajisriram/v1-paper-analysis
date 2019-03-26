@@ -5,6 +5,7 @@ import os
 import numpy as np
 from sklearn.model_selection import train_test_split
 import statsmodels.api as sm
+import statsmodels
 from tqdm import tqdm
 import sys
 
@@ -57,6 +58,13 @@ def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ct
                 retry = False
             except np.linalg.linalg.LinAlgError:
                 retry = True
+            except statsmodels.tools.sm_exceptions.PerfectSeparationError
+                retry = True
+            except Exceptoin as e:
+                print(e)
+                retry = True
+                
+                
         performances_that_condition.append(perf)
     return performances_that_condition
     
