@@ -163,18 +163,18 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
             pvals.append(res.pvalues[0])
             
             # okay now try using that model to predict for all specific orientations and durations
-            for ii,ctr in enumerate(interested_contrasts):
-                for jj,dur in enumerate(interested_durations):
-                    which = np.bitwise_and(ctrs==ctr,durs==dur)
-                    if np.sum(which)>0:
-                        X_sub = X[which]
-                        y_sub = y[which]
-                        predicted_sub = res.predict(X_sub)
-                        predicted_sub = (predicted>=0.5)
-                        perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
-                        perf_matrix_dur_ctr[ii][jj].append(perf_sub)
-                    else:
-                        perf_matrix_dur_ctr[ii][jj].append(np.nan)
+            # for ii,ctr in enumerate(interested_contrasts):
+                # for jj,dur in enumerate(interested_durations):
+                    # which = np.bitwise_and(ctrs==ctr,durs==dur)
+                    # if np.sum(which)>0:
+                        # X_sub = X[which]
+                        # y_sub = y[which]
+                        # predicted_sub = res.predict(X_sub)
+                        # predicted_sub = (predicted>=0.5)
+                        # perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
+                        # perf_matrix_dur_ctr[ii][jj].append(perf_sub)
+                    # else:
+                        # perf_matrix_dur_ctr[ii][jj].append(np.nan)
                         
         except Exception as e:
             print('Unknown Error :::::::::',get_units(df),e)
