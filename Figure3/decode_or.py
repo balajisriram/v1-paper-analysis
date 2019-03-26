@@ -9,6 +9,9 @@ import statsmodels.api as sm
 from tqdm import tqdm
 import pickle
 import sys
+import warnings
+
+warnings.simplefilter('error', UserWarning)
 
 def get_units(inp):
     cols = inp.columns.values
@@ -221,6 +224,210 @@ def process_session(loc,df_name,fit_intercept=True):
         f.write(df_name+'\n')
     return 0
 
+
+    X = df[get_units(df)]
+    y = df['orientations']
+    
+    ctrs = df.contrasts
+    durs = df.durations
+    
+    # fix durations...
+    durs[durs<0.05] = 0.05
+    durs[durs>0.2] = 0.2
+    
+    interested_contrasts = [0,0.15,1]
+    interested_durations = [0.05,0.1,0.15,0.2]
+    
+    num_units = len(get_units(df))
+    if verbose:
+        print('units found : {0}'.format(get_units(df)))
+        print('num units found: {0}'.format(num_units))
+        print(df['orientations'].describe())
+    # deal with totally bananas orientations
+    transforms = {}
+    for ori in y.unique():
+        mapped_ori = ori
+        while mapped_ori>90:
+            mapped_ori = mapped_ori-180
+        while mapped_ori<-90:
+            mapped_ori = mapped_ori+180
+        transforms[ori]=mapped_ori
+    y = y.map(transforms)
+    
+    # make the orientations 0 or 1
+    transforms = {}
+    for ori in y.unique():
+        if ori>0:transforms[ori] = 1
+        elif ori<0:transforms[ori]=0
+        else: transforms[ori]=0
+    y = y.map(transforms)
+    performance = []
+    coeffs = []
+    intercepts = []
+    pvals = []
+    perf_matrix_dur_ctr = [[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
+    for i in range(n_splits):
+        X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
+        if fit_intercept:
+            X_train['intercept'] = 1.0
+            X_test['intercept'] = 1.0
+        try:
+            logreg = sm.Logit(y_train,X_train)
+            res = logreg.fit(disp=False)
+            predicted = res.predict(X_test)
+            predicted = (predicted>=0.5)
+            perf = np.sum(predicted==y_test)/y_test.size
+            coeffs.append(res.params[0])
+            intercepts.append(res.params[0])
+            performance.append(perf)
+            pvals.append(res.pvalues[0])
+            
+            # okay now try using that model to predict for all specific orientations and durations
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    which = np.bitwise_and(ctrs==ctr,durs==dur)
+                    if np.sum(which)>0:
+                        X_sub = X[which]
+                        y_sub = y[which]
+                        predicted_sub = res.predict(X_sub)
+                        predicted_sub = (predicted>=0.5)
+                        perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
+                        perf_matrix_dur_ctr[ii][jj].append(perf_sub)
+                    else:
+                        perf_matrix_dur_ctr[ii][jj].append(np.nan)
+            
+        except ValueError:
+            coeffs.append(np.nan)
+            intercepts.append(np.nan)
+            performance.append(np.nan)
+            pvals.append(np.nan)
+            
+            # fill'em up with nans
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    perf_matrix_dur_ctr[ii][jj].append(np.nan)
+                        
+        except Exception as e:
+            print('Unknown Error :::::::::',get_units(df),e)
+            coeffs.append(np.nan)
+            intercepts.append(np.nan)
+            performance.append(np.nan)
+            pvals.append(np.nan)
+            
+            # fill'em up with nans
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    perf_matrix_dur_ctr[ii][jj].append(np.nan)
+    if num_units==1:consistent = is_consistent_sm(np.array(pvals))
+    else: consistent = 'n/a'
+    return performance,coeffs,intercepts,pvals,consistent,perf_matrix_dur_ctr
+
+def predict_ori_sm_full(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,verbose=False):
+    X = df[get_units(df)]
+    y = df['orientations']
+    
+    ctrs = df.contrasts
+    durs = df.durations
+    
+    # fix durations...
+    durs[durs<0.05] = 0.05
+    durs[durs>0.2] = 0.2
+    
+    interested_contrasts = [0,0.15,1]
+    interested_durations = [0.05,0.1,0.15,0.2]
+    
+    num_units = len(get_units(df))
+    if verbose:
+        print('units found : {0}'.format(get_units(df)))
+        print('num units found: {0}'.format(num_units))
+        print(df['orientations'].describe())
+    # deal with totally bananas orientations
+    transforms = {}
+    for ori in y.unique():
+        mapped_ori = ori
+        while mapped_ori>90:
+            mapped_ori = mapped_ori-180
+        while mapped_ori<-90:
+            mapped_ori = mapped_ori+180
+        transforms[ori]=mapped_ori
+    y = y.map(transforms)
+    
+    # make the orientations 0 or 1
+    transforms = {}
+    for ori in y.unique():
+        if ori>0:transforms[ori] = 1
+        elif ori<0:transforms[ori]=0
+        else: transforms[ori]=0
+    y = y.map(transforms)
+    performance = []
+    perf_matrix_dur_ctr = [[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
+    for i in range(n_splits):
+        print(".", end =" ") 
+        X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
+        if fit_intercept:
+            X_train['intercept'] = 1.0
+            X_test['intercept'] = 1.0
+        try:
+            logreg = sm.Logit(y_train,X_train)
+            res = logreg.fit(disp=False)
+            predicted = res.predict(X_test)
+            predicted = (predicted>=0.5)
+            perf = np.sum(predicted==y_test)/y_test.size
+            performance.append(perf)
+            
+            # okay now try using that model to predict for all specific orientations and durations
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    which = np.bitwise_and(ctrs==ctr,durs==dur)
+                    if np.sum(which)>0:
+                        X_sub = X[which]
+                        y_sub = y[which]
+                        predicted_sub = res.predict(X_sub)
+                        predicted_sub = (predicted>=0.5)
+                        perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
+                        perf_matrix_dur_ctr[ii][jj].append(perf_sub)
+                    else:
+                        perf_matrix_dur_ctr[ii][jj].append(np.nan)
+            
+        except ValueError:
+            performance.append(np.nan)
+            # fill'em up with nans
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    perf_matrix_dur_ctr[ii][jj].append(np.nan)
+                        
+        except Exception as e:
+            print('Unknown Error :::::::::',get_units(df),e)
+            performance.append(np.nan)
+            # fill'em up with nans
+            for ii,ctr in enumerate(interested_contrasts):
+                for jj,dur in enumerate(interested_durations):
+                    perf_matrix_dur_ctr[ii][jj].append(np.nan)
+        except Warning as w:
+            print(w)
+            pdb.set_trace()
+    print("done")
+    return performance,perf_matrix_dur_ctr
+
+def process_full_session(loc,df_name,fit_intercept=True):
+    df = pd.read_pickle(os.path.join(loc,df_name))
+    units = get_units(df)
+    
+    this_session = {}
+    this_session['units'] = units
+    df_filt = filter_session(df,unit_filter='all',time_filter=np.array([0,0.5]))
+    prefs,perf_matrix_dur_ctr = predict_ori_sm_full(df_filt,verbose=False,fit_intercept=fit_intercept)
+    this_session['performances'] = prefs
+    # this_session['perf_matrix_dur_ctr'] = perf_matrix_dur_ctr
+    # save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
+    save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\TempPerfStore'
+    with open(os.path.join(save_loc,df_name),'wb') as f:
+        pickle.dump(this_session,f)
+    with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
+        f.write(df_name+'\n')
+    return 0
+
+
 def collect_result(result):
     result_dict = result[0]
     result_name = result[1]
@@ -235,11 +442,12 @@ def handle_error(er):
     print(er)
     
 if __name__=='__main__':
-    loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
-    print(sys.argv)
-    print(int(sys.argv[1]))
-    which = int(sys.argv[1])
-    which = which-1
+    # loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
+    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'
+    # print(sys.argv)
+    # print(int(sys.argv[1]))
+    # which = int(sys.argv[1])
+    # which = which-1
     # pool = mp.Pool(24)
     if False:
         time_filters = [np.array([0.,0.01]),
@@ -278,10 +486,12 @@ if __name__=='__main__':
             decoding_df.to_pickle(os.path.join(save_loc,name))
         
     
-    f = os.listdir(loc)
-    print(f[0:10])
-    print(f[which])
-    process_session(loc,f[which],fit_intercept=True)
+    # f = os.listdir(loc)
+    # print(f[0:10])
+    # print(f[which])
+    for f in os.listdir(loc):
+        # process_session(loc,f[which],fit_intercept=True)
+        process_full_session(loc,f,fit_intercept=True)
     #for job in f:
     #    pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
