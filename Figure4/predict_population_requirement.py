@@ -83,13 +83,15 @@ if __name__=='__main__':
     potential_contrasts = np.array([0.15, 1])
     potential_durations = np.array([0.05,0.1,0.15, 0.2])
     interested_durations = np.array([0.05,0.1, 0.2])
+    correct_index_durs = [0,1,3]
+
     print('running for num population==',N_units)
     file_for_pop_size = 'population_{0}.pickle'.format(N_units)
     data_all_condns = []
     for ii,ctr in enumerate(potential_contrasts):
         for kk,dur in enumerate(interested_durations):
             print('ctr:',ctr,' dur:',dur)
-            jj = np.squeeze(np.argwhere(potential_durations==interested_durations))
+            jj = correct_index_durs[kk]
             data_that_condition = {}
             data_that_condition['contrast'] = ctr
             data_that_condition['duration'] = dur
