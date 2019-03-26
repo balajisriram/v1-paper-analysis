@@ -50,7 +50,7 @@ def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ct
             X_test = np.insert(X_test,0,1.0,axis=1)
             try:
                 logreg = sm.Logit(y_train,X_train)
-                res = logreg.fit(disp=False)
+                res = logreg.fit(disp=False,maxiter=100)
                 predicted = res.predict(X_test)
                 predicted = (predicted>=0.5)
                 perf = np.sum(predicted==y_test)/y_test.size
