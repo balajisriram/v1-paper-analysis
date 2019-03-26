@@ -442,8 +442,8 @@ def handle_error(er):
     print(er)
     
 if __name__=='__main__':
-    # loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
-    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'
+    loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
+    # loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'
     # print(sys.argv)
     # print(int(sys.argv[1]))
     # which = int(sys.argv[1])
