@@ -74,7 +74,7 @@ if __name__=='__main__':
     potential_orientations = np.array([-45,45])
     potential_contrasts = np.array([0.15, 1])
     potential_durations = np.array([0.05,0.1,0.2])
-    
+    print('running for num population==',N_units)
     file_for_pop_size = 'population_{0}.pickle'.format(N_units)
     data_all_condns = []
     for ii,ctr in enumerate(potential_contrasts):
@@ -84,11 +84,12 @@ if __name__=='__main__':
             data_that_condition['contrast'] = ctr
             data_that_condition['duration'] = dur
             perf_that_condn = get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ii,jj)
-            data_that_condition['performances'] = performances_that_condition
+            data_that_condition['performances'] = perf_that_condn
             
             data_all_condns.append(data_that_condition)
-            with open(os.path.join(save_loc,file_for_pop_size),'wb') as f:
-                pickle.dump(data_all_condns,f)
+    print('saving to ',file_for_pop_size)
+    with open(os.path.join(save_loc,file_for_pop_size),'wb') as f:
+        pickle.dump(data_all_condns,f)
                 
             
             
