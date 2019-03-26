@@ -19,7 +19,8 @@ def sample_from_population(df, N_trials,N_units,ctr_idx,dur_idx,):
         if row.response_hist[0][ctr_idx][dur_idx].size==0 or row.response_hist[1][ctr_idx][dur_idx].size==0:
             remove_list.append(idx)
     df = df.drop(remove_list)
-    
+    if df.count==0:
+       return [],[],'no_data'
     sub_df = df.sample(n=N_units,replace=True)
     units_this_sample = sub_df.unit_id
     
@@ -35,7 +36,7 @@ def sample_from_population(df, N_trials,N_units,ctr_idx,dur_idx,):
             except ValueError:
                 print('relevant_resp:',relevant_resp)
 
-    return X,orientations
+    return X,orientations,'nominal'
 
 
 def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ctr_idx,dur_idx):
@@ -44,7 +45,10 @@ def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ct
     for i in tqdm(range(N_samplings)):
         retry = True
         while retry:
-            X,y = sample_from_population(total_df,N_trials,N_units,ctr_idx,dur_idx)
+            X,y,reason = sample_from_population(total_df,N_trials,N_units,ctr_idx,dur_idx)
+            if reason=='no_data':
+                performances_that_condition = []
+                return performances_that_condition
             X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
 
             X_train = np.insert(X_train,0,1.0,axis=1)
