@@ -41,18 +41,22 @@ def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ct
     performances_that_condition = []
 
     for i in tqdm(range(N_samplings)):
-        X,y = sample_from_population(total_df,N_trials,N_units,ctr_idx,dur_idx)
-        X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
+        retry = True
+        while retry:
+            X,y = sample_from_population(total_df,N_trials,N_units,ctr_idx,dur_idx)
+            X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
 
-        X_train = np.insert(X_train,0,1.0,axis=1)
-        X_test = np.insert(X_test,0,1.0,axis=1)
-
-        logreg = sm.Logit(y_train,X_train)
-        res = logreg.fit(disp=False)
-        predicted = res.predict(X_test)
-        predicted = (predicted>=0.5)
-        perf = np.sum(predicted==y_test)/y_test.size
-
+            X_train = np.insert(X_train,0,1.0,axis=1)
+            X_test = np.insert(X_test,0,1.0,axis=1)
+            try:
+                logreg = sm.Logit(y_train,X_train)
+                res = logreg.fit(disp=False)
+                predicted = res.predict(X_test)
+                predicted = (predicted>=0.5)
+                perf = np.sum(predicted==y_test)/y_test.size
+                retry = False
+            except np.linalg.linalg.LinAlgError:
+                retry = True
         performances_that_condition.append(perf)
     return performances_that_condition
     
