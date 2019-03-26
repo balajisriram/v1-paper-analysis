@@ -21,11 +21,9 @@ def sample_from_population(df, N_trials,N_units,ctr_idx,dur_idx,):
     for ii,ori in enumerate(orientations):
         for jj,unit in enumerate(units_this_sample):
             r_hist = sub_df.iloc[jj].response_hist
-            try:
-                relevant_resp = r_hist[ori][ctr_idx][dur_idx]
-                X[ii,jj] = sample_from(relevant_resp)
-            except:
-                pdb.set_trace()
+            relevant_resp = r_hist[ori][ctr_idx][dur_idx]
+            X[ii,jj] = sample_from(relevant_resp)
+
     return X,orientations
 
 
