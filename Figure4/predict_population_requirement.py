@@ -99,9 +99,9 @@ if __name__=='__main__':
             data_that_condition['performances'] = perf_that_condn
             
             data_all_condns.append(data_that_condition)
-    print('saving to ',file_for_pop_size)
-    with open(os.path.join(save_loc,file_for_pop_size),'wb') as f:
-        pickle.dump(data_all_condns,f)
+            print('saving to ',file_for_pop_size)
+            with open(os.path.join(save_loc,file_for_pop_size),'wb') as f:
+                pickle.dump(data_all_condns,f)
                 
             
             
