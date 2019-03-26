@@ -158,7 +158,7 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
             predicted = (predicted>=0.5)
             perf = np.sum(predicted==y_test)/y_test.size
             coeffs.append(res.params[0])
-            intercepts.append(res.params[0])
+            intercepts.append(res.params[1])
             performance.append(perf)
             pvals.append(res.pvalues[0])
             
