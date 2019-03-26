@@ -419,8 +419,8 @@ def process_full_session(loc,df_name,fit_intercept=True):
     prefs,perf_matrix_dur_ctr = predict_ori_sm_full(df_filt,verbose=False,fit_intercept=fit_intercept)
     this_session['performances'] = prefs
     # this_session['perf_matrix_dur_ctr'] = perf_matrix_dur_ctr
-    # save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
-    save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\TempPerfStore'
+    save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
+    # save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\TempPerfStore'
     with open(os.path.join(save_loc,df_name),'wb') as f:
         pickle.dump(this_session,f)
     with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
