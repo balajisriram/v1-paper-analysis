@@ -56,10 +56,6 @@ def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ct
                 predicted = (predicted>=0.5)
                 perf = np.sum(predicted==y_test)/y_test.size
                 retry = False
-            except np.linalg.linalg.LinAlgError:
-                retry = True
-            except statsmodels.tools.sm_exceptions.PerfectSeparationError
-                retry = True
             except Exceptoin as e:
                 print(e)
                 retry = True
