@@ -22,7 +22,10 @@ def sample_from_population(df, N_trials,N_units,ctr_idx,dur_idx,):
         for jj,unit in enumerate(units_this_sample):
             r_hist = sub_df.iloc[jj].response_hist
             relevant_resp = r_hist[ori][ctr_idx][dur_idx]
-            X[ii,jj] = sample_from(relevant_resp)
+            try:
+                X[ii,jj] = sample_from(relevant_resp)
+            except ValueError:
+                print('relevant_resp:',relevant_resp)
 
     return X,orientations
 
@@ -65,6 +68,7 @@ if __name__=='__main__':
     data_all_condns = []
     for ii,ctr in enumerate(potential_contrasts):
         for jj,dur in enumerate(potential_durations):
+            print('ctr:',ctr,' dur:',dur)
             data_that_condition = {}
             data_that_condition['contrast'] = ctr
             data_that_condition['duration'] = dur
