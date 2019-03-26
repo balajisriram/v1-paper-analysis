@@ -15,7 +15,7 @@ def sample_from_population(df, N_trials,N_units,ctr_idx,dur_idx,):
     remove_list = []
     # make sure that the corresponding df has data
     for idx,row in df.iterrows():
-        if row.response_hist[0][ctr_idx][dur_idx].size==0 or row.response_hist[1][ctr_idx][dur_idx].size==0;
+        if row.response_hist[0][ctr_idx][dur_idx].size==0 or row.response_hist[1][ctr_idx][dur_idx].size==0:
             remove_list.append(idx)
     df = df.drop(remove_list)
     
