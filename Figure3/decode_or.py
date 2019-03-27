@@ -10,6 +10,7 @@ from tqdm import tqdm
 import pickle
 import sys
 import warnings
+import random
 
 warnings.simplefilter('error', UserWarning)
 
@@ -273,9 +274,10 @@ def predict_ori_sm_full(df,n_splits=100,remove_0_contrast=False,fit_intercept=Tr
                     which = np.bitwise_and(ctrs==ctr,durs==dur)
                     if np.sum(which)>0:
                         X_sub = X[which]
+                        X_sub['intercept'] = 1.0
                         y_sub = y[which]
                         predicted_sub = res.predict(X_sub)
-                        predicted_sub = (predicted>=0.5)
+                        predicted_sub = (predicted_sub>=0.5)
                         perf_sub = np.sum(predicted_sub==y_sub)/y_sub.size
                         perf_matrix_dur_ctr[ii][jj].append(perf_sub)
                     else:
@@ -301,7 +303,22 @@ def predict_ori_sm_full(df,n_splits=100,remove_0_contrast=False,fit_intercept=Tr
     print("done")
     return performance,perf_matrix_dur_ctr
 
-def process_full_session(loc,df_name,fit_intercept=True):
+    
+def shuffle_df(df):
+    output_df = pd.DataFrame()
+    for ii,ori in enumerate(df.orientations.unique()):
+        for jj,ctr in enumerate(df.contrasts.unique()):
+            for kk,dur in enumerate(df.durations.unique()):
+                which = np.bitwise_and(df.orientations==ori,df.contrasts==ctr)
+                which = np.bitwise_and(which,df.durations==dur)
+                sub_df = df.loc[which]
+                if not sub_df.empty:
+                    sub_df = sub_df.sample(frac=1).reset_index(drop=True)
+                    output_df = output_df.append(sub_df,ignore_index=True)
+                del sub_df                    
+    return output_df              
+    
+def process_full_session(loc,df_name,fit_intercept=True,n_shuffles=100):
     df = pd.read_pickle(os.path.join(loc,df_name))
     units = get_units(df)
     
@@ -309,25 +326,42 @@ def process_full_session(loc,df_name,fit_intercept=True):
     this_session['units'] = units
     df_filt = filter_session(df,unit_filter='all',time_filter=np.array([0,0.5]))
     prefs,perf_matrix_dur_ctr = predict_ori_sm_full(df_filt,verbose=False,fit_intercept=fit_intercept)
+    perfs_shuff = []
+    for ii in range(n_shuffles):
+        df_shuffled = shuffle_df(df_filt)
+        perfs_shuffle,perf_matrix_dur_ctr_shuffle = predict_ori_sm_full(df_shuffled,verbose=False,fit_intercept=fit_intercept,n_splits=7)
+        perfs_shuff.append(perfs_shuffle)
+        
     this_session['performances'] = prefs
+    this_session['performances_shuffled'] = perfs_shuff
     # this_session['perf_matrix_dur_ctr'] = perf_matrix_dur_ctr
-    save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
-    # save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\TempPerfStore'
+    # save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
+    save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\TempPerfStore'
     with open(os.path.join(save_loc,df_name),'wb') as f:
         pickle.dump(this_session,f)
     with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
         f.write(df_name+'\n')
     return 0
 
-    print(er)
     
 if __name__=='__main__':
-    loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
-    # loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'
+    # loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
+    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'
+    
+    des =r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\StatsmodelsPerformance_0-500ms_withCtrDur_2'
+    
+    # for f in os.listdir(loc):
+        # if not f in os.listdir(des):
+            # print(f)
     print(sys.argv)
     print(int(sys.argv[1]))
     which = int(sys.argv[1])
     which = which-1
+    
+    try:
+        max = int(sys.argv[2])-1
+    except:
+        max = which+1
     # pool = mp.Pool(24)
     if False:
         time_filters = [np.array([0.,0.01]),
@@ -367,13 +401,17 @@ if __name__=='__main__':
         
     
     f = os.listdir(loc)
-    print(f[0:10])
-    print(f[which])
+    # print(f[which])
     # for f in os.listdir(loc):
-    process_session(loc,f[which],fit_intercept=True)
-    # process_full_session(loc,f[which],fit_intercept=True)
+    # process_session(loc,f[which],fit_intercept=True)
+    for ii in range(which,max):
+        process_full_session(loc,f[ii],fit_intercept=True)
     #for job in f:
     #    pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
     #pool.close()
     #pool.join()
+    
+
+    
+    
