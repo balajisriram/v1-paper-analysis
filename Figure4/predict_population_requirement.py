@@ -60,8 +60,6 @@ def sample_from_population_simple(df,N_trials,N_units,ctr_idx,dur_idx,):
     X = np.full((orientations.size,N_units),np.nan)
     c_vec = np.full((1,N_units),np.nan)
     i_vec = c_vec.copy()
-    # C = X.copy()
-    # I = X.copy()
     for jj,unit in enumerate(units_this_sample):
         c_vec[0,jj] = sub_df.iloc[jj].mean_coeff_shortdur
         i_vec[0,jj] = sub_df.iloc[jj].mean_intercept_shortdur
@@ -114,7 +112,9 @@ def get_performance_for_virtual_session(total_df,N_samplings,N_trials,N_units,ct
     
 def get_performance_for_virtual_session_simple(total_df,N_samplings,N_trials,N_units,ctr_idx,dur_idx):
     performances_that_condition = []
-
+    performances_that_condition_unweighted = []
+    num_spikes_total = []
+    num_spikes_differential = []
     for i in tqdm(range(N_samplings)):
         X,y,C,I,reason = sample_from_population_simple(total_df,N_trials,N_units,ctr_idx,dur_idx)
         if reason=='no_data':
@@ -122,10 +122,21 @@ def get_performance_for_virtual_session_simple(total_df,N_samplings,N_trials,N_u
             return performances_that_condition
         y_pred = np.sum(X*C+I,axis=1)
         y_pred = y_pred>0
-        
         perf = np.sum(y_pred==y)/y.size
+        
+        C_unweighted = C/np.abs(C)
+        y_pred_unweighted = np.sum(X*C_unweighted,axis=1)
+        y_pred_unweighted = y_pred_unweighted>0
+        perf_unweighted = np.sum(y_pred_unweighted==y)/y.size
+        
+        num_spikes_total_per_trial = np.squeeze(np.sum(X,axis=1))
+        num_spikes_differential_per_trial = np.abs(np.squeeze(np.sum(X*C_unweighted,axis=1)))
+        
         performances_that_condition.append(perf)
-    return performances_that_condition
+        performances_that_condition_unweighted.append(perf_unweighted)
+        num_spikes_total.append(np.mean(num_spikes_total_per_trial))
+        num_spikes_differential.append(np.mean(num_spikes_differential_per_trial))
+    return performances_that_condition,performances_that_condition_unweighted,num_spikes_total,num_spikes_differential
     
 if __name__=='__main__':
     which = int(sys.argv[1])
@@ -136,11 +147,15 @@ if __name__=='__main__':
     save_loc = '/camhpc/home/bsriram/data/Analysis/PerfByPopsize'
     # save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\PopulationDecoding'
     # sample N units and create a session for C = 0.15, dur = 0.1
-    potential_n_units = [1,2,3,5,8,10,13,15,18,20,23,25,28,30,32,40,50,64,72,96,108,128,176,256,378,512,756,1024]
+    potential_n_units = np.arange(1,200,1)
+    potential_n_units = np.concatenate([potential_n_units,np.arange(205,400,5),axis=None)
+    potential_n_units = np.concatenate([potential_n_units,np.arange(450,1000,50),axis=None)
+    potential_n_units = np.concatenate([potential_n_units,np.arange(1500,10000,500),axis=None)
+    
     # for N_units in potential_n_units:
     N_units = potential_n_units[which]
     N_trials = 1000
-    N_samplings = 1000
+    N_samplings = 10000
     potential_orientations = np.array([-45,45])
     
     potential_contrasts = np.array([0,0.15, 1])
@@ -161,8 +176,11 @@ if __name__=='__main__':
             data_that_condition = {}
             data_that_condition['contrast'] = ctr
             data_that_condition['duration'] = dur
-            perf_that_condn = get_performance_for_virtual_session_simple(total_df,N_samplings,N_trials,N_units,ii,jj)
+            perf_that_condn,perf_unweighted,n_spikes_tot,n_spikes_diff = get_performance_for_virtual_session_simple(total_df,N_samplings,N_trials,N_units,ii,jj)
             data_that_condition['performances'] = perf_that_condn
+            data_that_condition['performances_unweighted'] = perf_unweighted
+            data_that_condition['spikes_total'] = n_spikes_tot
+            data_that_condition['spikes_differential'] = n_spikes_diff
             
             data_all_condns.append(data_that_condition)
             print('saving to ',file_for_pop_size)
