@@ -131,10 +131,10 @@ if __name__=='__main__':
     which = int(sys.argv[1])
     which = which-1
     # total_df = pd.read_pickle('/camhpc/home/bsriram/v1paper/v1-paper-analysis/Figure4/DecodingOfPopulation_onlyConsistent.df')
-    total_df = pd.read_pickle('Figure4\DecodingOfPopulation_onlyConsistent.df')
-    # total_df = pd.read_pickle('/camhpc/home/bsriram/data/Analysis/DecodingOfPopulation_onlyConsistent.df')
-    # save_loc = '/camhpc/home/bsriram/data/Analysis/PerfByPopsize'
-    save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\PopulationDecoding'
+    # total_df = pd.read_pickle('Figure4\DecodingOfPopulation_onlyConsistent.df')
+    total_df = pd.read_pickle('/camhpc/home/bsriram/data/Analysis/DecodingOfPopulation_onlyConsistent.df')
+    save_loc = '/camhpc/home/bsriram/data/Analysis/PerfByPopsize'
+    # save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\PopulationDecoding'
     # sample N units and create a session for C = 0.15, dur = 0.1
     potential_n_units = [1,2,3,5,8,10,13,15,18,20,23,25,28,30,32,40,50,64,72,96,108,128,176,256,378,512,756,1024]
     # for N_units in potential_n_units:
