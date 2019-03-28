@@ -147,10 +147,10 @@ if __name__=='__main__':
     save_loc = '/camhpc/home/bsriram/data/Analysis/PerfByPopsize'
     # save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\PopulationDecoding'
     # sample N units and create a session for C = 0.15, dur = 0.1
-    potential_n_units = np.arange(1,200,1)
-    potential_n_units = np.concatenate([potential_n_units,np.arange(205,400,5),axis=None)
-    potential_n_units = np.concatenate([potential_n_units,np.arange(450,1000,50),axis=None)
-    potential_n_units = np.concatenate([potential_n_units,np.arange(1500,10000,500),axis=None)
+    potential_n_units = np.arange(1,201,1)
+    potential_n_units = np.concatenate((potential_n_units,np.arange(205,401,5)),axis=None)
+    potential_n_units = np.concatenate((potential_n_units,np.arange(450,1001,50)),axis=None)
+    potential_n_units = np.concatenate((potential_n_units,np.arange(1500,10001,500)),axis=None)
     
     # for N_units in potential_n_units:
     N_units = potential_n_units[which]
