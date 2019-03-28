@@ -45,11 +45,14 @@ def sample_from_population_simple(df,N_trials,N_units,ctr_idx,dur_idx,):
     for idx,row in df.iterrows():
         if row.response_hist[0][ctr_idx][dur_idx].size==0 or row.response_hist[1][ctr_idx][dur_idx].size==0:
             remove_list.append(idx)
-    df = df.drop(remove_list)
+    df_removed = df.drop(remove_list)
     if df.count==0:
        print('bad')
        return [],[],[],[],'no_data'
-    sub_df = df.sample(n=N_units,replace=True)
+    try:
+        sub_df = df_removed.sample(n=N_units,replace=True)
+    except:
+        pdb.set_trace()
     units_this_sample = sub_df.unit_id
     
     orientations = np.random.choice([0,1],N_trials)
@@ -128,10 +131,10 @@ if __name__=='__main__':
     which = int(sys.argv[1])
     which = which-1
     # total_df = pd.read_pickle('/camhpc/home/bsriram/v1paper/v1-paper-analysis/Figure4/DecodingOfPopulation_onlyConsistent.df')
-    # total_df = pd.read_pickle('Figure4\DecodingOfPopulation_onlyConsistent.df')
-    total_df = pd.read_pickle('/camhpc/home/bsriram/data/Analysis/DecodingOfPopulation_onlyConsistent.df')
-    save_loc = '/camhpc/home/bsriram/data/Analysis/PerfByPopsize'
-    # save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\PopulationDecoding'
+    total_df = pd.read_pickle('Figure4\DecodingOfPopulation_onlyConsistent.df')
+    # total_df = pd.read_pickle('/camhpc/home/bsriram/data/Analysis/DecodingOfPopulation_onlyConsistent.df')
+    # save_loc = '/camhpc/home/bsriram/data/Analysis/PerfByPopsize'
+    save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\PopulationDecoding'
     # sample N units and create a session for C = 0.15, dur = 0.1
     potential_n_units = [1,2,3,5,8,10,13,15,18,20,23,25,28,30,32,40,50,64,72,96,108,128,176,256,378,512,756,1024]
     # for N_units in potential_n_units:
@@ -139,7 +142,10 @@ if __name__=='__main__':
     N_trials = 1000
     N_samplings = 1000
     potential_orientations = np.array([-45,45])
-    potential_contrasts = np.array([0.15, 1])
+    
+    potential_contrasts = np.array([0,0.15, 1])
+    interested_contrasts = np.array([0.15, 1])
+    correct_index_ctrs = [1,2]
     potential_durations = np.array([0.05,0.1,0.15, 0.2])
     interested_durations = np.array([0.05,0.1, 0.15,0.2])
     correct_index_durs = [0,1,2,3]
@@ -147,10 +153,11 @@ if __name__=='__main__':
     print('running for num population==',N_units)
     file_for_pop_size = 'population_{0}.pickle'.format(N_units)
     data_all_condns = []
-    for ii,ctr in enumerate(potential_contrasts):
-        for kk,dur in enumerate(interested_durations):
+    for kk,ctr in enumerate(interested_contrasts):
+        ii = correct_index_ctrs[kk]
+        for ll,dur in enumerate(interested_durations):
             print('ctr:',ctr,' dur:',dur)
-            jj = correct_index_durs[kk]
+            jj = correct_index_durs[ll]
             data_that_condition = {}
             data_that_condition['contrast'] = ctr
             data_that_condition['duration'] = dur
