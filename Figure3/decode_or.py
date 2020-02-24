@@ -16,10 +16,10 @@ warnings.simplefilter('error', UserWarning)
 
 def get_units(inp):
     cols = inp.columns.values
-    which = np.isin(cols,np.array(['trial_number','orientations','contrasts','phases','durations']),invert=True)
+    which = np.isin(cols,np.array(['trial_number','orientations','contrasts','phases','durations','pupil_good','running_good','pupil_size','running_speed','trial_time','aroused']),invert=True)
     return cols[which]
     
-def filter_session(inp,unit_filter='all',trial_filter='all',time_filter=np.array([-np.inf,np.inf])):
+def filter_session(inp,unit_filter='all',trial_filter='all',time_filter=np.array([-np.inf,np.inf]),arousal=None):
     
     if unit_filter=='all':
         unit_filter = get_units(inp)
@@ -32,11 +32,17 @@ def filter_session(inp,unit_filter='all',trial_filter='all',time_filter=np.array
         ii = ii[np.bitwise_and(ii>min,ii<=max)]
         return ii.size
     
-    out = inp.filter(items=['trial_number','orientations','contrasts','phases','durations'])
+    out = inp.filter(items=['trial_number','orientations','contrasts','phases','durations','pupil_good','running_good','pupil_size','running_speed','trial_time','aroused'])
     for u in unit_filter:
         s_u = inp[u]
         s_u = s_u.apply(get_length,convert_dtype=True,args=(time_filter[0],time_filter[1]))
         out[u] = s_u
+        
+    if not arousal is None:
+        if arousal==True:
+            out = out.query('aroused==True')
+        else:
+            out = out.query('aroused==False')
     return out
 
 def is_consistent(coeffs,frac=0.7):
@@ -148,6 +154,7 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
     pvals = []
     perf_matrix_dur_ctr = [[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
     for i in range(n_splits):
+        print(".",end=" ")
         X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25)
         if fit_intercept:
             X_train['intercept'] = 1.0
@@ -189,6 +196,7 @@ def predict_ori_sm(df,n_splits=100,remove_0_contrast=False,fit_intercept=True,ve
             for ii,ctr in enumerate(interested_contrasts):
                 for jj,dur in enumerate(interested_durations):
                     perf_matrix_dur_ctr[ii][jj].append(np.nan)
+    print("DONE")
     if num_units==1:consistent = is_consistent_sm(np.array(pvals))
     else: consistent = 'n/a'
     return performance,coeffs,intercepts,pvals,consistent,perf_matrix_dur_ctr
@@ -209,6 +217,40 @@ def process_session(loc,df_name,fit_intercept=True):
         this_unit['perf_matrix_dur_ctr'] = perf_matrix_dur_ctr
         units_this_session.append(this_unit)
     save_loc = '/camhpc/home/bsriram/data/Analysis/TempPerfStore'
+    with open(os.path.join(save_loc,df_name),'wb') as f:
+        pickle.dump(units_this_session,f)
+    with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
+        f.write(df_name+'\n')
+    return 0
+    
+def process_session_arousal(loc,df_name,fit_intercept=True):
+    df = pd.read_pickle(os.path.join(loc,df_name))
+    units = get_units(df)
+    units_this_session = []
+    for unit in units:
+        print(unit)
+        this_unit = {}
+        this_unit['unit_id'] = unit
+        
+        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]),arousal=True)
+        prefs,coeffs,intercepts,pvals,consistency,perf_matrix_dur_ctr = predict_ori_sm(df_filt,verbose=False,fit_intercept=fit_intercept)
+        this_unit['mean_performance_aroused'] = np.nanmean(prefs)
+        this_unit['mean_coeff_aroused'] = np.nanmean(coeffs)
+        this_unit['mean_intercept_aroused'] = np.nanmean(intercepts)
+        this_unit['is_consistent_aroused'] = consistency
+        this_unit['perf_matrix_dur_ctr_aroused'] = perf_matrix_dur_ctr
+        
+        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]),arousal=False)
+        prefs,coeffs,intercepts,pvals,consistency,perf_matrix_dur_ctr = predict_ori_sm(df_filt,verbose=False,fit_intercept=fit_intercept)
+        this_unit['mean_performance_nonaroused'] = np.nanmean(prefs)
+        this_unit['mean_coeff_nonaroused'] = np.nanmean(coeffs)
+        this_unit['mean_intercept_nonaroused'] = np.nanmean(intercepts)
+        this_unit['is_consistent_nonaroused'] = consistency
+        this_unit['perf_matrix_dur_ctr_nonaroused'] = perf_matrix_dur_ctr
+        
+        
+        units_this_session.append(this_unit)
+    save_loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\StatsmodelsPerformance_forArousal'
     with open(os.path.join(save_loc,df_name),'wb') as f:
         pickle.dump(units_this_session,f)
     with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
@@ -342,13 +384,27 @@ def process_full_session(loc,df_name,fit_intercept=True,n_shuffles=100):
     with open(os.path.join(save_loc,'Finished_sessions.txt'),'a') as f:
         f.write(df_name+'\n')
     return 0
-
+    
+def get_firing_rates_by_arousal(loc,df_name):
+    df = pd.read_pickle(os.path.join(loc,df_name))
+    units = get_units(df)
+    
+    units = get_units(df)
+    units_this_session = []
+    for unit in units:
+        this_unit = {}
+        this_unit['unit_id'] = unit
+        df_filt = filter_session(df,unit_filter=unit,time_filter=np.array([0,0.5]))
+        this_unit['firing_rate_aroused'] = df_filt.query('aroused==True')[unit].mean()
+        this_unit['firing_rate_nonaroused'] = df_filt.query('aroused==False')[unit].mean()
+        units_this_session.append(this_unit)
+    return units_this_session
     
 if __name__=='__main__':
     # loc = '/camhpc/home/bsriram/data/Analysis/ShortDurSessionDFs'
-    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\ShortDurSessionDFs'
+    loc = r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\\ShortDurSessionDFsForEyeTracking'
     
-    des =r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\StatsmodelsPerformance_0-500ms_withCtrDur_2'
+    des =r'C:\Users\bsriram\Desktop\Data_V1Paper\Analysis\StatsmodelsPerformance_0-500ms_forEyeTracking'
     
     # for f in os.listdir(loc):
         # if not f in os.listdir(des):
@@ -404,8 +460,11 @@ if __name__=='__main__':
     # print(f[which])
     # for f in os.listdir(loc):
     # process_session(loc,f[which],fit_intercept=True)
+    all_units = []
     for ii in range(which,max):
-        process_full_session(loc,f[ii],fit_intercept=True)
+        process_session_arousal(loc,f[ii],fit_intercept=True)
+        
+    pdb.set_trace()
     #for job in f:
     #    pool.apply_async(process_session,args=(loc,f),callback=collect_result, error_callback=handle_error)
         
